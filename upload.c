@@ -1,9 +1,30 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <stdbool.h>
 
 #include <onion/onion.h>
 #include <onion/shortcuts.h>
+
+char * FILE_DIRECTORY = "./files";
+char * HTML_PAGE = "index.html";
+
+#define TEXT_LIST_SIZE  10
+char * TEXT_LIST[TEXT_LIST_SIZE];
+
+char * read_file(char * file_name, unsigned int * input_file_size){
+	char * file_contents;
+	FILE *input_file = fopen(file_name, "rb");
+	fseek(input_file, 0, SEEK_END);
+	*input_file_size = ftell(input_file);
+	rewind(input_file);
+	file_contents = malloc((*input_file_size + 1) * (sizeof(char)));
+	fread(file_contents, sizeof(char), *input_file_size, input_file);
+	fclose(input_file);
+	file_contents[*input_file_size] = 0;
+	return(file_contents);
+}
 
 onion_connection_status post_data(void *_, onion_request *req, onion_response *res){
 	if (onion_request_get_flags(req)&OR_HEAD){
@@ -21,17 +42,12 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 	return OCS_PROCESSED;
 }
 
-char * read_html_file(char * file_name, unsigned int * input_file_size){
-	char * file_contents;
-	FILE *input_file = fopen(file_name, "rb");
-	fseek(input_file, 0, SEEK_END);
-	*input_file_size = ftell(input_file);
-	rewind(input_file);
-	file_contents = malloc((*input_file_size + 1) * (sizeof(char)));
-	fread(file_contents, sizeof(char), *input_file_size, input_file);
-	fclose(input_file);
-	file_contents[*input_file_size] = 0;
-	return(file_contents);
+bool file_exists(char * file_path){
+	struct stat s;
+	if(-1 == stat(file_path, &s)){
+		return(false);
+	}
+	return(true);
 }
 
 onion_connection_status main_page(void *_, onion_request *req, onion_response *res){
