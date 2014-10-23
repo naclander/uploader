@@ -60,19 +60,14 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 	return OCS_PROCESSED;
 }
 
-bool file_exists(char * file_path){
-	struct stat s;
-	if(-1 == stat(file_path, &s)){
-		return(false);
-	}
-	return(true);
+char * edit_html_template(char * current_html_file, char * s1, char * s2,
+ 					      unsigned int * input_file_size){
+	char * new_html_file = NULL;
+	Sasprintf(new_html_file,current_html_file,s1,s2);
+	*input_file_size = strlen(new_html_file);
+	free(current_html_file);
+	return(new_html_file);
 }
-
-char * free_old_return_new(char * old, char * new){
-	free(old);
-	return(new);
-}
-
 
 //Parses the text file TEXT_FILE for strings, creates a new formatted string,
 //and places the new formatted string in the first %s of current_html_file. It
@@ -91,11 +86,7 @@ char * text_list_to_html(char * current_html_file, unsigned int * input_file_siz
 	char * new_html_file = NULL;
 
 	if(text_list == NULL){
-		//TODO possibly make this into its own function because its the
-		//same 3 lines at the end of this function
-		Sasprintf(new_html_file,current_html_file,"","%s");
-		*input_file_size = strlen(new_html_file);
-		return(free_old_return_new(current_html_file,new_html_file));
+		return(edit_html_template(current_html_file,"","%s",input_file_size));
 	}
 
 	char * formatted_text_list = NULL;
@@ -107,14 +98,8 @@ char * text_list_to_html(char * current_html_file, unsigned int * input_file_siz
 	}
 	Sasprintf(formatted_text_list,"%s\n</ul>",formatted_text_list);
 
-	Sasprintf(new_html_file,current_html_file,formatted_text_list,"%s");
-	*input_file_size = strlen(new_html_file);
-	return(free_old_return_new(current_html_file,new_html_file));
-}
-
-char * file_list_to_html(unsigned int * input_file_size){
-	*input_file_size = 10;
-	return malloc(10*sizeof(char));
+	return(edit_html_template(current_html_file,formatted_text_list,"%s",
+						      input_file_size));
 }
 
 void write_and_free(onion_response * res, char * file, unsigned int input_size){
