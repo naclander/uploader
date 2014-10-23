@@ -60,6 +60,16 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 	return OCS_PROCESSED;
 }
 
+//Replaces the two "%s"'s in current_html_file with s1 and s2 respectively.
+//Also frees the memory of current_html_file and returns a pointer to newly
+//allocated html_file string. Also updates input_file_size to size of newly
+//created html_file string.
+//Input:
+//current_html_file: The current html file string which must contain two "%s"
+//s1: The string that will replace the first "%s"
+//s2: The string that will replace the second "%s"
+//input_file_size: The file size of current_html_file, which will be set to
+//the file size of the newly allocated file
 char * edit_html_template(char * current_html_file, char * s1, char * s2,
  					      unsigned int * input_file_size){
 	char * new_html_file = NULL;
