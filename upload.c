@@ -123,9 +123,19 @@ void write_and_free(onion_response * res, char * file, unsigned int input_size){
 }
 
 onion_connection_status main_page(void *_, onion_request *req, onion_response *res){
+
 	unsigned int input_file_size;
-	char * html_file = read_html_file("index.html", &input_file_size);
-	onion_response_write(res, html_file,input_file_size*sizeof(char));
+	char * html_file = read_file(HTML_PAGE, &input_file_size);
+
+	html_file = text_list_to_html(html_file, &input_file_size);
+
+	write_and_free(res,html_file,input_file_size*sizeof(char));
+	//char * text_list_html = text_list_to_html(&input_file_size);
+	//if(text_list_html != NULL){
+	//	onion_response_write(res, text_list_html,input_file_size*sizeof(char));
+	//}
+	//char * files_list = file_list_to_html(&input_file_size);
+	//onion_response_write(res, text_list_html,input_file_size*sizeof(char));
 	return OCS_PROCESSED;
 }
 
@@ -135,7 +145,7 @@ int main(int argc, char **argv){
 	onion_url * urls=onion_root_url(o);
 	
 	/*
-	onion_url_add_static(urls, "", 
+	onion_url_add_static(urls, "",
 "<html>\n"
 "<head>\n"
 " <title>Simple post example</title>\n"
