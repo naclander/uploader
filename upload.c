@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -6,6 +7,14 @@
 
 #include <onion/onion.h>
 #include <onion/shortcuts.h>
+
+//Safer asprintf macro from O'Reily (Thanks!)
+//Argument must be a char * initialized to NULL
+#define Sasprintf(write_to, ...) { \
+	char *tmp_string_for_extend = (write_to); \
+	asprintf(&(write_to), __VA_ARGS__); \
+	free(tmp_string_for_extend); \
+}
 
 char * FILE_DIRECTORY = "./files";
 char * HTML_PAGE = "index.html";
