@@ -17,14 +17,23 @@
 }
 
 char * FILE_DIRECTORY = "./files";
+char * TEXT_FILE = "text.txt";
 char * HTML_PAGE = "index.html";
 
 #define TEXT_LIST_SIZE  10
 char * TEXT_LIST[TEXT_LIST_SIZE];
 
+//Attempts to read a specified file
+//input:
+//file_name: full path to file
+//input_file_size: this value will be assigned the size of the file read
+//Returns a pointer to the string with the file contents, or null if file not found
 char * read_file(char * file_name, unsigned int * input_file_size){
 	char * file_contents;
 	FILE *input_file = fopen(file_name, "rb");
+	if(input_file == NULL){
+		return(NULL);	
+	}
 	fseek(input_file, 0, SEEK_END);
 	*input_file_size = ftell(input_file);
 	rewind(input_file);
