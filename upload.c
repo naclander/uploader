@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <stdbool.h>
 
 #include <onion/onion.h>
 #include <onion/shortcuts.h>
@@ -16,12 +15,26 @@
 	free(tmp_string_for_extend); \
 }
 
-char * FILE_DIRECTORY = "./files";
+char * FILE_DIRECTORY = "./files/";
 char * TEXT_FILE = "text.txt";
 char * HTML_PAGE = "index.html";
 
 #define TEXT_LIST_SIZE  10
 char * TEXT_LIST[TEXT_LIST_SIZE];
+
+
+
+char * stream_to_string(FILE * input_stream, unsigned int * input_file_size){
+	char * file_contents;
+	fseek(input_stream, 0, SEEK_END);
+	*input_file_size = ftell(input_stream);
+	rewind(input_stream);
+	file_contents = malloc((*input_file_size + 1) * (sizeof(char)));
+	*input_file_size = fread(file_contents, sizeof(char), *input_file_size, input_stream);
+	fclose(input_stream);
+	file_contents[*input_file_size] = 0;
+	return(file_contents);
+}
 
 //Attempts to read a specified file
 //input:
