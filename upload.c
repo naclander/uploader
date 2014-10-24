@@ -47,14 +47,7 @@ char * read_file(char * file_name, unsigned int * input_file_size){
 	if(input_file == NULL){
 		return(NULL);	
 	}
-	fseek(input_file, 0, SEEK_END);
-	*input_file_size = ftell(input_file);
-	rewind(input_file);
-	file_contents = malloc((*input_file_size + 1) * (sizeof(char)));
-	fread(file_contents, sizeof(char), *input_file_size, input_file);
-	fclose(input_file);
-	file_contents[*input_file_size] = 0;
-	return(file_contents);
+	return(stream_to_string(input_file,input_file_size));
 }
 
 onion_connection_status post_data(void *_, onion_request *req, onion_response *res){
@@ -73,23 +66,57 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 	return OCS_PROCESSED;
 }
 
-//Replaces the two "%s"'s in current_html_file with s1 and s2 respectively.
+//Replaces the "%s"'s in current_html_file with s1 and s2 respectively.
 //Also frees the memory of current_html_file and returns a pointer to newly
 //allocated html_file string. Also updates input_file_size to size of newly
 //created html_file string.
 //Input:
-//current_html_file: The current html file string which must contain two "%s"
+//current_html_file: The current html file string which contains one or two "%s"
 //s1: The string that will replace the first "%s"
-//s2: The string that will replace the second "%s"
+//s2: The string that will replace the second "%s", if NULL then there is only 1 %s
 //input_file_size: The file size of current_html_file, which will be set to
 //the file size of the newly allocated file
 char * edit_html_template(char * current_html_file, char * s1, char * s2,
  					      unsigned int * input_file_size){
 	char * new_html_file = NULL;
-	Sasprintf(new_html_file,current_html_file,s1,s2);
+	if(s2 == NULL){
+		Sasprintf(new_html_file,current_html_file,s1);
+	}
+	else{
+		Sasprintf(new_html_file,current_html_file,s1,s2);
+	}
 	*input_file_size = strlen(new_html_file);
 	free(current_html_file);
 	return(new_html_file);
+}
+
+
+char * file_list_to_html(char * current_html_file, unsigned int * input_file_size){
+
+	char * command;
+	Sasprintf(command,"ls -t %s",FILE_DIRECTORY);
+	FILE * input_stream = popen(command,"r");
+	if(input_stream == NULL){
+		return(edit_html_template(current_html_file,"",NULL,input_file_size));
+	}
+	free(command);
+
+	char * file_list;
+	unsigned int file_list_size;
+	file_list = stream_to_string(input_stream,&file_list_size);
+
+	char * formatted_text_list = NULL;
+	Sasprintf(formatted_text_list,"<ul style=\"list-style-type:disc\">");
+	char *tok = file_list;
+	while((tok = strtok(tok, "\n")) != NULL){
+		printf("%s\n",tok);
+		Sasprintf(formatted_text_list, "%s\n <li> <a href=\"q?%s\"> %s</a></li>",
+				  formatted_text_list,tok,tok);
+        tok = NULL;
+	}
+	Sasprintf(formatted_text_list,"%s\n</ul>",formatted_text_list);
+	return(edit_html_template(current_html_file,formatted_text_list,"%s",
+						      input_file_size));
 }
 
 //Parses the text file TEXT_FILE for strings, creates a new formatted string,
@@ -106,7 +133,6 @@ char * edit_html_template(char * current_html_file, char * s1, char * s2,
 //is freed by this function
 char * text_list_to_html(char * current_html_file, unsigned int * input_file_size){
 	char * text_list = read_file(TEXT_FILE, input_file_size);
-	char * new_html_file = NULL;
 
 	if(text_list == NULL){
 		return(edit_html_template(current_html_file,"","%s",input_file_size));
@@ -125,11 +151,6 @@ char * text_list_to_html(char * current_html_file, unsigned int * input_file_siz
 						      input_file_size));
 }
 
-void write_and_free(onion_response * res, char * file, unsigned int input_size){
-	onion_response_write(res, file, input_size);
-	free(file);
-}
-
 onion_connection_status main_page(void *_, onion_request *req, onion_response *res){
 
 	unsigned int input_file_size;
@@ -137,13 +158,12 @@ onion_connection_status main_page(void *_, onion_request *req, onion_response *r
 
 	html_file = text_list_to_html(html_file, &input_file_size);
 
-	write_and_free(res,html_file,input_file_size*sizeof(char));
-	//char * text_list_html = text_list_to_html(&input_file_size);
-	//if(text_list_html != NULL){
-	//	onion_response_write(res, text_list_html,input_file_size*sizeof(char));
-	//}
-	//char * files_list = file_list_to_html(&input_file_size);
-	//onion_response_write(res, text_list_html,input_file_size*sizeof(char));
+	html_file = file_list_to_html(html_file, &input_file_size);
+
+	onion_response_write(res, html_file, input_file_size);
+
+	free(html_file);
+
 	return OCS_PROCESSED;
 }
 
@@ -172,4 +192,5 @@ int main(int argc, char **argv){
 	onion_url_add(urls, "", main_page);
 	onion_set_port(o,port);	
 	onion_listen(o);
+	return(EXIT_SUCCESS);
 }
