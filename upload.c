@@ -86,76 +86,78 @@ char * edit_html_template(char * current_html_file, char * s1, char * s2){
 }
 
 
-char * file_list_to_html(char * current_html_file){
-
-	char * command;
+/*
+ * Lists all files in FILE_DIRECTORY into an allocated string, and returns it.
+ * Input: none
+ * Output: Pointer to newly allocated string, NEEDS TO BE FREED
+ */
+char * file_list_to_html(){
+	char * html_file_list = NULL;
+	//TODO find a way to not allocate a string for this
+	char * command = NULL;
 	Sasprintf(command,"ls -t %s",FILE_DIRECTORY);
 	FILE * input_stream = popen(command,"r");
-	if(input_stream == NULL){
-		return(edit_html_template(current_html_file,"",NULL));
-	}
 	free(command);
 
-	char * file_list;
-	unsigned int file_list_size;
-	file_list = stream_to_string(input_stream);
-
-	char * formatted_text_list = NULL;
-	Sasprintf(formatted_text_list,"<ul style=\"list-style-type:disc\">");
-	char *tok = file_list;
-	while((tok = strtok(tok, "\n")) != NULL){
-		Sasprintf(formatted_text_list, "%s\n <li> <a href=\"q?%s\"> %s</a></li>",
-				  formatted_text_list,tok,tok);
-        tok = NULL;
+	if(input_stream == NULL){
+		Sasprintf(html_file_list,"");
 	}
-	Sasprintf(formatted_text_list,"%s\n</ul>",formatted_text_list);
-	return(edit_html_template(current_html_file,formatted_text_list,"%s"));
+	else{
+		char * file_list = stream_to_string(input_stream);
+		Sasprintf(html_file_list,"<ul style=\"list-style-type:disc\">");
+		char *tok = file_list;
+		while((tok = strtok(tok, "\n")) != NULL){
+			Sasprintf(html_file_list, "%s\n <li> <a href=\"q?%s\"> %s</a></li>",
+					  html_file_list,tok,tok);
+			tok = NULL;
+		}
+		Sasprintf(html_file_list,"%s\n</ul>",html_file_list);
+	}
+	return(html_file_list);
 }
 
-//Parses the text file TEXT_FILE for strings, creates a new formatted string,
-//and places the new formatted string in the first %s of current_html_file. It
-//wil also set input_file_size to the size of the newly expanded html file.
-//current_html_file will be freed
-//Input:
-//current_html_file: the html file that will have the new formatted text_list string
-//placed into it. It must contain two "%s".
-//input_file_size: This value will be set to the newly expanded size of the html
-//file
-//Returns:
-//a pointer to the expanded html file. This pointer must be freed. current_html_file
-//is freed by this function
-char * text_list_to_html(char * current_html_file){
+/*
+Parses the text file TEXT_FILE for text, and creates a formatted html text
+list string, which it returns.
+Input: none
+Output: Pointer pointing to the newly allocated string, NEEDS TO BE FREED
+*/
+char * text_list_to_html(){
 	char * text_list = read_file(TEXT_FILE);
-
+	char * html_text_list = NULL;
 	if(text_list == NULL){
-		return(edit_html_template(current_html_file,"","%s"));
+		Sasprintf(html_text_list,"");
 	}
-
-	char * formatted_text_list = NULL;
-	Sasprintf(formatted_text_list,"<ul style=\"list-style-type:disc\">");
-	char *tok = text_list;
-	while((tok = strtok(tok, "\n")) != NULL){
-		Sasprintf(formatted_text_list, "%s\n <li> %s </li>",formatted_text_list,tok);
-        tok = NULL;
+	else{
+		Sasprintf(html_text_list,"<ul style=\"list-style-type:disc\">");
+		char *tok = text_list;
+		while((tok = strtok(tok, "\n")) != NULL){
+			Sasprintf(html_text_list, "%s\n <li> %s </li>",html_text_list,tok);
+			tok = NULL;
+		}
+		Sasprintf(html_text_list,"%s\n</ul>",html_text_list);
+		
 	}
-	Sasprintf(formatted_text_list,"%s\n</ul>",formatted_text_list);
-
-	return(edit_html_template(current_html_file,formatted_text_list,"%s"));
+	return(html_text_list);
 }
+
 
 onion_connection_status main_page(void *_, onion_request *req, onion_response *res){
 
 	unsigned int input_file_size;
 	char * html_file = read_file(HTML_PAGE, &input_file_size);
 
-	html_file = text_list_to_html(html_file);
+	char * html_file = read_file(HTML_PAGE);
+	char * html_text_list = text_list_to_html();
+	char * html_file_list = file_list_to_html();
 
-	html_file = file_list_to_html(html_file);
+	Sasprintf(html_file,html_file,html_text_list,html_file_list);
 
 	onion_response_write(res, html_file, strlen(html_file));
 
 	free(html_file);
-
+	free(html_text_list);
+	free(html_file_list);
 	return OCS_PROCESSED;
 }
 
