@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/stat.h>
 
 #include <onion/onion.h>
 #include <onion/shortcuts.h>
@@ -22,17 +21,15 @@ char * HTML_PAGE = "index.html";
 #define TEXT_LIST_SIZE  10
 char * TEXT_LIST[TEXT_LIST_SIZE];
 
-
-
-char * stream_to_string(FILE * input_stream, unsigned int * input_file_size){
+char * stream_to_string(FILE * input_stream){
 	char * file_contents;
 	fseek(input_stream, 0, SEEK_END);
-	*input_file_size = ftell(input_stream);
+	unsigned int input_file_size = ftell(input_stream);
 	rewind(input_stream);
-	file_contents = malloc((*input_file_size + 1) * (sizeof(char)));
-	*input_file_size = fread(file_contents, sizeof(char), *input_file_size, input_stream);
+	file_contents = malloc((input_file_size + 1) * (sizeof(char)));
+	input_file_size = fread(file_contents, sizeof(char), input_file_size, input_stream);
 	fclose(input_stream);
-	file_contents[*input_file_size] = 0;
+	file_contents[input_file_size] = 0;
 	return(file_contents);
 }
 
@@ -41,13 +38,13 @@ char * stream_to_string(FILE * input_stream, unsigned int * input_file_size){
 //file_name: full path to file
 //input_file_size: this value will be assigned the size of the file read
 //Returns a pointer to the string with the file contents, or null if file not found
-char * read_file(char * file_name, unsigned int * input_file_size){
+char * read_file(char * file_name){
 	char * file_contents;
 	FILE *input_file = fopen(file_name, "rb");
 	if(input_file == NULL){
 		return(NULL);	
 	}
-	return(stream_to_string(input_file,input_file_size));
+	return(stream_to_string(input_file));
 }
 
 onion_connection_status post_data(void *_, onion_request *req, onion_response *res){
@@ -76,8 +73,7 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 //s2: The string that will replace the second "%s", if NULL then there is only 1 %s
 //input_file_size: The file size of current_html_file, which will be set to
 //the file size of the newly allocated file
-char * edit_html_template(char * current_html_file, char * s1, char * s2,
- 					      unsigned int * input_file_size){
+char * edit_html_template(char * current_html_file, char * s1, char * s2){
 	char * new_html_file = NULL;
 	if(s2 == NULL){
 		Sasprintf(new_html_file,current_html_file,s1);
@@ -85,38 +81,35 @@ char * edit_html_template(char * current_html_file, char * s1, char * s2,
 	else{
 		Sasprintf(new_html_file,current_html_file,s1,s2);
 	}
-	*input_file_size = strlen(new_html_file);
 	free(current_html_file);
 	return(new_html_file);
 }
 
 
-char * file_list_to_html(char * current_html_file, unsigned int * input_file_size){
+char * file_list_to_html(char * current_html_file){
 
 	char * command;
 	Sasprintf(command,"ls -t %s",FILE_DIRECTORY);
 	FILE * input_stream = popen(command,"r");
 	if(input_stream == NULL){
-		return(edit_html_template(current_html_file,"",NULL,input_file_size));
+		return(edit_html_template(current_html_file,"",NULL));
 	}
 	free(command);
 
 	char * file_list;
 	unsigned int file_list_size;
-	file_list = stream_to_string(input_stream,&file_list_size);
+	file_list = stream_to_string(input_stream);
 
 	char * formatted_text_list = NULL;
 	Sasprintf(formatted_text_list,"<ul style=\"list-style-type:disc\">");
 	char *tok = file_list;
 	while((tok = strtok(tok, "\n")) != NULL){
-		printf("%s\n",tok);
 		Sasprintf(formatted_text_list, "%s\n <li> <a href=\"q?%s\"> %s</a></li>",
 				  formatted_text_list,tok,tok);
         tok = NULL;
 	}
 	Sasprintf(formatted_text_list,"%s\n</ul>",formatted_text_list);
-	return(edit_html_template(current_html_file,formatted_text_list,"%s",
-						      input_file_size));
+	return(edit_html_template(current_html_file,formatted_text_list,"%s"));
 }
 
 //Parses the text file TEXT_FILE for strings, creates a new formatted string,
@@ -131,11 +124,11 @@ char * file_list_to_html(char * current_html_file, unsigned int * input_file_siz
 //Returns:
 //a pointer to the expanded html file. This pointer must be freed. current_html_file
 //is freed by this function
-char * text_list_to_html(char * current_html_file, unsigned int * input_file_size){
-	char * text_list = read_file(TEXT_FILE, input_file_size);
+char * text_list_to_html(char * current_html_file){
+	char * text_list = read_file(TEXT_FILE);
 
 	if(text_list == NULL){
-		return(edit_html_template(current_html_file,"","%s",input_file_size));
+		return(edit_html_template(current_html_file,"","%s"));
 	}
 
 	char * formatted_text_list = NULL;
@@ -147,8 +140,7 @@ char * text_list_to_html(char * current_html_file, unsigned int * input_file_siz
 	}
 	Sasprintf(formatted_text_list,"%s\n</ul>",formatted_text_list);
 
-	return(edit_html_template(current_html_file,formatted_text_list,"%s",
-						      input_file_size));
+	return(edit_html_template(current_html_file,formatted_text_list,"%s"));
 }
 
 onion_connection_status main_page(void *_, onion_request *req, onion_response *res){
@@ -156,11 +148,11 @@ onion_connection_status main_page(void *_, onion_request *req, onion_response *r
 	unsigned int input_file_size;
 	char * html_file = read_file(HTML_PAGE, &input_file_size);
 
-	html_file = text_list_to_html(html_file, &input_file_size);
+	html_file = text_list_to_html(html_file);
 
-	html_file = file_list_to_html(html_file, &input_file_size);
+	html_file = file_list_to_html(html_file);
 
-	onion_response_write(res, html_file, input_file_size);
+	onion_response_write(res, html_file, strlen(html_file));
 
 	free(html_file);
 
