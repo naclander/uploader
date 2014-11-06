@@ -63,29 +63,6 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 	return OCS_PROCESSED;
 }
 
-//Replaces the "%s"'s in current_html_file with s1 and s2 respectively.
-//Also frees the memory of current_html_file and returns a pointer to newly
-//allocated html_file string. Also updates input_file_size to size of newly
-//created html_file string.
-//Input:
-//current_html_file: The current html file string which contains one or two "%s"
-//s1: The string that will replace the first "%s"
-//s2: The string that will replace the second "%s", if NULL then there is only 1 %s
-//input_file_size: The file size of current_html_file, which will be set to
-//the file size of the newly allocated file
-char * edit_html_template(char * current_html_file, char * s1, char * s2){
-	char * new_html_file = NULL;
-	if(s2 == NULL){
-		Sasprintf(new_html_file,current_html_file,s1);
-	}
-	else{
-		Sasprintf(new_html_file,current_html_file,s1,s2);
-	}
-	free(current_html_file);
-	return(new_html_file);
-}
-
-
 /*
  * Lists all files in FILE_DIRECTORY into an allocated string, and returns it.
  * Input: none
@@ -107,7 +84,7 @@ char * file_list_to_html(){
 		Sasprintf(html_file_list,"<ul style=\"list-style-type:disc\">");
 		char *tok = file_list;
 		while((tok = strtok(tok, "\n")) != NULL){
-			Sasprintf(html_file_list, "%s\n <li> <a href=\"q?%s\"> %s</a></li>",
+			Sasprintf(html_file_list, "%s\n <li> <a href=\"%s?file\"> %s</a></li>",
 					  html_file_list,tok,tok);
 			tok = NULL;
 		}
@@ -138,26 +115,43 @@ char * text_list_to_html(){
 		Sasprintf(html_text_list,"%s\n</ul>",html_text_list);
 		
 	}
+	free(text_list);
 	return(html_text_list);
 }
 
 
 onion_connection_status main_page(void *_, onion_request *req, onion_response *res){
 
-	unsigned int input_file_size;
-	char * html_file = read_file(HTML_PAGE, &input_file_size);
+	if (onion_request_get_query(req, "file")){
+		char * dir_path = NULL;
+		Sasprintf(dir_path,"%s%s",FILE_DIRECTORY,onion_request_get_query(req,"1"));
+		FILE * fp = fopen(dir_path,"rb");
+		free(dir_path);
+		fseek(fp, 0, SEEK_END);
+		int size = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+		char * buffer = malloc(size);
+		/*Will break on files of size 0*/
+		if (fread(buffer, 1, size, fp) == size && size != 0){
+			/* TODO Make MIME type detection better */
+			onion_response_set_header(res, "Content-Type", "application/octet-stream");
+			onion_response_write(res, buffer, size);
+		}
+		free(buffer);
+	}
+	else{
+		char * html_file = read_file(HTML_PAGE);
+		char * html_text_list = text_list_to_html();
+		char * html_file_list = file_list_to_html();
 
-	char * html_file = read_file(HTML_PAGE);
-	char * html_text_list = text_list_to_html();
-	char * html_file_list = file_list_to_html();
+		Sasprintf(html_file,html_file,html_text_list,html_file_list);
 
-	Sasprintf(html_file,html_file,html_text_list,html_file_list);
+		onion_response_write(res, html_file, strlen(html_file));
 
-	onion_response_write(res, html_file, strlen(html_file));
-
-	free(html_file);
-	free(html_text_list);
-	free(html_file_list);
+		free(html_file);
+		free(html_text_list);
+		free(html_file_list);
+	}
 	return OCS_PROCESSED;
 }
 
@@ -184,6 +178,7 @@ int main(int argc, char **argv){
 
 	onion_url_add(urls, "data", post_data);
 	onion_url_add(urls, "", main_page);
+	onion_url_add(urls, "^(.*)$", main_page);
 	onion_set_port(o,port);	
 	onion_listen(o);
 	return(EXIT_SUCCESS);
