@@ -116,8 +116,10 @@ onion_connection_status main_page(void *_, onion_request *req, onion_response *r
 	if (onion_request_get_query(req, "file")){
 		/* TODO: Find a way to not allocate a string for this */
 		char * dir_path = NULL;
-		Sasprintf(dir_path,"%s%s",FILE_DIRECTORY,onion_request_get_query(req,"1"));
+		char * buffer = NULL;
 		FILE * fp = NULL;
+
+		Sasprintf(dir_path,"%s%s",FILE_DIRECTORY,onion_request_get_query(req,"1"));
 		if((fp = fopen(dir_path,"rb")) == NULL){
 			return(onion_shortcut_response("<b> 404 File Not Found </b>", 404, req, res));
 		}
@@ -125,12 +127,10 @@ onion_connection_status main_page(void *_, onion_request *req, onion_response *r
 		fseek(fp, 0, SEEK_END);
 		int size = ftell(fp);
 		fseek(fp, 0, SEEK_SET);
-		char * buffer = malloc(size);
+		buffer = malloc(size);
 		/*Will break on files of size 0*/
 		if (fread(buffer, 1, size, fp) == size && size != 0){
-			const char * mime_type = onion_mime_get(dir_path);
-			onion_response_set_header(res, "Content-Type", mime_type);
-			free((char *)mime_type);
+			onion_response_set_header(res, "Content-Type", onion_mime_get(dir_path));
 			onion_response_write(res, buffer, size);
 		}
 		fclose(fp);
