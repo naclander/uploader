@@ -6,6 +6,7 @@
 #include <onion/onion.h>
 #include <onion/shortcuts.h>
 #include <onion/codecs.h>
+#include <onion/mime.h>
 
 //Safer asprintf macro from O'Reily (Thanks!)
 //Argument must be a char * initialized to NULL
@@ -127,8 +128,9 @@ onion_connection_status main_page(void *_, onion_request *req, onion_response *r
 		char * buffer = malloc(size);
 		/*Will break on files of size 0*/
 		if (fread(buffer, 1, size, fp) == size && size != 0){
-			/* TODO Make MIME type detection better */
-			onion_response_set_header(res, "Content-Type", "application/octet-stream");
+			const char * mime_type = onion_mime_get(dir_path);
+			onion_response_set_header(res, "Content-Type", mime_type);
+			free((char *)mime_type);
 			onion_response_write(res, buffer, size);
 		}
 		fclose(fp);
