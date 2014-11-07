@@ -5,6 +5,7 @@
 
 #include <onion/onion.h>
 #include <onion/shortcuts.h>
+#include <onion/codecs.h>
 
 //Safer asprintf macro from O'Reily (Thanks!)
 //Argument must be a char * initialized to NULL
@@ -87,6 +88,7 @@ Output: Pointer pointing to the newly allocated string, NEEDS TO BE FREED
 char * text_list_to_html(){
 	char * text_list = read_file(TEXT_FILE);
 	char * html_text_list = NULL;
+	char * sanitized_text= NULL;
 	if(text_list == NULL){
 		Sasprintf(html_text_list,"");
 	}
@@ -94,7 +96,11 @@ char * text_list_to_html(){
 		Sasprintf(html_text_list,"\n</ul>");
 		char *tok = text_list;
 		while((tok = strtok(tok, "\n")) != NULL){
+			if( (sanitized_text = onion_html_quote(tok) ) != NULL){
+				tok = sanitized_text;
+			}
 			Sasprintf(html_text_list, "<li> %s </li>\n%s",tok,html_text_list);
+			sanitized_text == NULL? : free(sanitized_text);
 			tok = NULL;
 		}
 		Sasprintf(html_text_list,"<ul style=\"list-style-type:disc\">\n%s",html_text_list);
