@@ -18,9 +18,6 @@ char * FILE_DIRECTORY = "./files/";
 char * TEXT_FILE = "text.txt";
 char * HTML_PAGE = "index.html";
 
-#define TEXT_LIST_SIZE  10
-char * TEXT_LIST[TEXT_LIST_SIZE];
-
 char * stream_to_string(FILE * input_stream){
 	char * file_contents;
 	fseek(input_stream, 0, SEEK_END);
@@ -28,7 +25,6 @@ char * stream_to_string(FILE * input_stream){
 	rewind(input_stream);
 	file_contents = malloc((input_file_size + 1) * (sizeof(char)));
 	input_file_size = fread(file_contents, sizeof(char), input_file_size, input_stream);
-	fclose(input_stream);
 	file_contents[input_file_size] = 0;
 	return(file_contents);
 }
@@ -44,23 +40,9 @@ char * read_file(char * file_name){
 	if(input_file == NULL){
 		return(NULL);	
 	}
-	return(stream_to_string(input_file));
-}
-
-onion_connection_status post_data(void *_, onion_request *req, onion_response *res){
-	if (onion_request_get_flags(req)&OR_HEAD){
-		onion_response_write_headers(res);
-		return OCS_PROCESSED;
-	}
-	//user_data could be null if "text" form was not filled
-	const char *user_data=onion_request_get_post(req,"text");
-	if(!strcmp(user_data,"")){
-		onion_response_printf(res, "No User data");
-	}
-	else{
-		onion_response_printf(res, "The user wrote: %s", user_data);
-	}
-	return OCS_PROCESSED;
+	char * file_string = stream_to_string(input_file);
+	fclose(input_file);
+	return(file_string);
 }
 
 /*
@@ -70,8 +52,9 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
  */
 char * file_list_to_html(){
 	char * html_file_list = NULL;
-	//TODO find a way to not allocate a string for this
+	/* TODO find a way to not allocate a string for this */
 	char * command = NULL;
+	/* TODO Replace this with C directory API (maybe? Discuss) */	
 	Sasprintf(command,"ls -t %s",FILE_DIRECTORY);
 	FILE * input_stream = popen(command,"r");
 	free(command);
@@ -90,11 +73,13 @@ char * file_list_to_html(){
 		}
 		Sasprintf(html_file_list,"%s\n</ul>",html_file_list);
 	}
+	pclose(input_stream);
 	return(html_file_list);
 }
 
+
 /*
-Parses the text file TEXT_FILE for text, and creates a formatted html text
+Parses the text file TEXT_FILE for text, and creates a formatted html reverse text
 list string, which it returns.
 Input: none
 Output: Pointer pointing to the newly allocated string, NEEDS TO BE FREED
@@ -106,14 +91,13 @@ char * text_list_to_html(){
 		Sasprintf(html_text_list,"");
 	}
 	else{
-		Sasprintf(html_text_list,"<ul style=\"list-style-type:disc\">");
+		Sasprintf(html_text_list,"\n</ul>");
 		char *tok = text_list;
 		while((tok = strtok(tok, "\n")) != NULL){
-			Sasprintf(html_text_list, "%s\n <li> %s </li>",html_text_list,tok);
+			Sasprintf(html_text_list, "<li> %s </li>\n%s",tok,html_text_list);
 			tok = NULL;
 		}
-		Sasprintf(html_text_list,"%s\n</ul>",html_text_list);
-		
+		Sasprintf(html_text_list,"<ul style=\"list-style-type:disc\">\n%s",html_text_list);
 	}
 	free(text_list);
 	return(html_text_list);
@@ -123,9 +107,13 @@ char * text_list_to_html(){
 onion_connection_status main_page(void *_, onion_request *req, onion_response *res){
 
 	if (onion_request_get_query(req, "file")){
+		/* TODO: Find a way to not allocate a string for this */
 		char * dir_path = NULL;
 		Sasprintf(dir_path,"%s%s",FILE_DIRECTORY,onion_request_get_query(req,"1"));
-		FILE * fp = fopen(dir_path,"rb");
+		FILE * fp = NULL;
+		if((fp = fopen(dir_path,"rb")) == NULL){
+			return(onion_shortcut_response("<b> 404 File Not Found </b>", 404, req, res));
+		}
 		free(dir_path);
 		fseek(fp, 0, SEEK_END);
 		int size = ftell(fp);
@@ -137,6 +125,7 @@ onion_connection_status main_page(void *_, onion_request *req, onion_response *r
 			onion_response_set_header(res, "Content-Type", "application/octet-stream");
 			onion_response_write(res, buffer, size);
 		}
+		fclose(fp);
 		free(buffer);
 	}
 	else{
