@@ -37,7 +37,6 @@ char * stream_to_string(FILE * input_stream){
 //input_file_size: this value will be assigned the size of the file read
 //Returns a pointer to the string with the file contents, or null if file not found
 char * read_file(char * file_name){
-	char * file_contents;
 	FILE *input_file = fopen(file_name, "rb");
 	if(input_file == NULL){
 		return(NULL);	
@@ -158,11 +157,9 @@ onion_connection_status main_page(void *_, onion_request *req, onion_response *r
 }
 
 onion_connection_status post_data(void *_, onion_request *req, onion_response *res){
-	//user_data could be null if "text" form was not filled
 	const char *user_data=onion_request_get_post(req,"text");
-	if(strcmp(user_data,"")){
+	if(user_data != NULL){
 		//onion_response_printf(res, "The user wrote: %s", user_data);
-		/* TODO: Fix cross site scripting vulnerability */
 		/* TODO: Find a way to not allocate a string for this */
 		char * command = NULL;
 		FILE * input_stream = fopen(TEXT_FILE,"a");
@@ -173,7 +170,13 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 		fclose(input_stream);
 		free(command);
 	}
-	return(main_page(NULL, req,res));
+	user_data = onion_request_get_post(req,"file");
+	if(user_data != NULL){
+		const char * filename = onion_request_get_query(req,"?");	
+		printf("Filename: %s\n",filename);
+	}
+	/* Redirect so we can refresh without resending the form */
+	return(onion_shortcut_redirect("/",req,res));
 }
 
 int main(int argc, char **argv){
