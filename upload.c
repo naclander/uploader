@@ -181,7 +181,7 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 		FILE * input_stream = fopen(TEXT_FILE,"a");
 		if(fprintf(input_stream,"%s\n",user_data) < 0){
 			printf("Couldn't append to file\n");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		fclose(input_stream);
 		free(command);
@@ -194,7 +194,7 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 		FILE * uploaded_file= fopen(onion_request_get_file(req,"file"),"r");
 		if(!uploaded_file){
 			printf("Couldn't open new file\n");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		/* TODO: Get the file path without allocating a new string */
 		Sasprintf(file_path,"%s/%s",FILE_DIRECTORY,filename);	
@@ -203,7 +203,7 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 		file_buffer = stream_to_buffer(uploaded_file);	
 		if(fwrite(file_buffer,1,file_size,new_file) < file_size){
 			printf("Couldn't write new file\n");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		free(file_path);
 		free(file_buffer);
