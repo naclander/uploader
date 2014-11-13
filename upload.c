@@ -59,6 +59,22 @@ char * read_file(char * file_name){
 	return(file_string);
 }
 
+char * file_list_to_string(){
+	/* TODO Replace this with C directory API (maybe? Discuss) */	
+	/* TODO find a way to not allocate a string for this */
+	char * command = NULL;
+	char * file_list = NULL;
+	Sasprintf(command,"ls -t %s",FILE_DIRECTORY);
+	FILE * input_stream = popen(command,"r");
+	if(input_stream != NULL){
+		free(command);
+		file_list = stream_to_buffer(input_stream);	
+	}
+	pclose(input_stream);
+	return(file_list);
+}
+
+
 /*
  * Lists all files in FILE_DIRECTORY into an allocated string, and returns it.
  * Input: none
@@ -66,19 +82,12 @@ char * read_file(char * file_name){
  */
 char * file_list_to_html(){
 	char * html_file_list = NULL;
-	/* TODO find a way to not allocate a string for this */
-	char * command = NULL;
-	/* TODO Replace this with C directory API (maybe? Discuss) */	
-	Sasprintf(command,"ls -t %s",FILE_DIRECTORY);
-	FILE * input_stream = popen(command,"r");
-	free(command);
-
-	if(input_stream == NULL){
+	char * file_list = file_list_to_string();	
+	if(file_list == NULL){
 		/* Empty html_file_list */
 		html_file_list[0] = 0;
 	}
 	else{
-		char * file_list = stream_to_buffer(input_stream);
 		Sasprintf(html_file_list,"<ul style=\"list-style-type:disc\">");
 		char *tok = file_list;
 		while((tok = strtok(tok, "\n")) != NULL){
@@ -87,8 +96,8 @@ char * file_list_to_html(){
 			tok = NULL;
 		}
 		Sasprintf(html_file_list,"%s\n</ul>",html_file_list);
+		free(file_list);
 	}
-	pclose(input_stream);
 	return(html_file_list);
 }
 
@@ -187,6 +196,7 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 		free(command);
 	}
 	if(filename != NULL){
+		/* TODO: Verify filename is in correct format? */
 		printf("Filename: %s\n",filename);
 		char * file_buffer = NULL;
 		char * file_path = NULL;
@@ -218,7 +228,8 @@ int main(int argc, char **argv){
 	char * port = "8080";
 	onion * server = onion_new(O_ONE_LOOP);
 	onion_url * urls = onion_root_url(server);
-	//onion_server_set_max_file_size(onion_server_new(),10);
+	onion_set_max_file_size(server,MAX_POST_SIZE);
+	/* TODO: Remove magic number 128 */
 	onion_set_max_post_size(server,128);
 	onion_url_add(urls, "data", post_data);
 	onion_url_add(urls, "", main_page);
