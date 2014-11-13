@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+/* Maybe replace with threads.h when support exists */
+#include <pthread.h>
 
 #include <onion/onion.h>
 #include <onion/shortcuts.h>
@@ -20,6 +23,7 @@ char * FILE_DIRECTORY = "./files/";
 char * TEXT_FILE = "text.txt";
 char * HTML_PAGE = "index.html";
 size_t MAX_POST_SIZE = 2<<26; /* 134.218 Megabytes */
+size_t FILE_TTL = 120; /* How long the server keeps files and strings, in seconds */
 
 size_t get_stream_size(FILE * f){
 	fseek(f,0,SEEK_END);
@@ -73,7 +77,6 @@ char * file_list_to_string(){
 	pclose(input_stream);
 	return(file_list);
 }
-
 
 /*
  * Lists all files in FILE_DIRECTORY into an allocated string, and returns it.
@@ -224,7 +227,43 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 	return(onion_shortcut_redirect("/",req,res));
 }
 
+void delete_files(){
+	char * command = NULL;
+	char * file_list = NULL;
+	char * file_path = NULL;
+
+	while(1){
+		sleep(FILE_TTL/2);
+		unsigned int current_time = time(NULL);
+		file_list = file_list_to_string();
+		char *file = file_list;
+		while((file = strtok(file, "\n")) != NULL){
+			Sasprintf(file_path,"%s/%s",FILE_DIRECTORY,file);
+			Sasprintf(command,"date -r %s +%%s",file_path);	
+			FILE * command_stream = popen(command,"r");
+			free(command);
+			char * file_time_string = stream_to_buffer(command_stream);
+			unsigned int file_time = atoi(file_time_string);
+			free(file_time_string);
+			pclose(command_stream);
+			if( current_time > (file_time + FILE_TTL)){
+				printf("current time: %u, file_time: %u, FILE_TTL: %u\n",current_time,
+						file_time,FILE_TTL);
+				unlink(file_path);
+			}
+			else{
+				free(file_path);
+				break;
+			}
+			free(file_path);
+			file = NULL;
+		}
+	}
+}
+
 int main(int argc, char **argv){
+	pthread_t deletion_thread;
+	pthread_create(&deletion_thread,NULL,(void * ) &delete_files, NULL);
 	char * port = "8080";
 	onion * server = onion_new(O_ONE_LOOP);
 	onion_url * urls = onion_root_url(server);
