@@ -10,6 +10,7 @@
 #include <onion/shortcuts.h>
 #include <onion/codecs.h>
 #include <onion/mime.h>
+#include <onion/log.h>
 
 //Safer asprintf macro from O'Reily (Thanks!)
 //Argument must be a char * initialized to NULL
@@ -190,7 +191,7 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 		char * command = NULL;
 		FILE * input_stream = fopen(TEXT_FILE,"a");
 		if(fprintf(input_stream,"%s\n",user_data) < 0){
-			printf("Couldn't append to file\n");
+			ONION_INFO("Couldn't append to file\n");
 			exit(EXIT_FAILURE);
 		}
 		fclose(input_stream);
@@ -198,13 +199,12 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 	}
 	if(filename != NULL){
 		/* TODO: Verify filename is in correct format? */
-		printf("Filename: %s\n",filename);
 		char * file_buffer = NULL;
 		char * file_path = NULL;
 		FILE * new_file = NULL;
 		FILE * uploaded_file= fopen(onion_request_get_file(req,"file"),"r");
 		if(!uploaded_file){
-			printf("Couldn't open new file\n");
+			ONION_INFO("Couldn't open new file\n");
 			exit(EXIT_FAILURE);
 		}
 		/* TODO: Get the file path without allocating a new string */
@@ -214,8 +214,8 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 		size_t size_wrote = 0;
 		file_buffer = stream_to_buffer(uploaded_file);	
 		if((size_wrote = fwrite(file_buffer,1,file_size,new_file)) < file_size){
-			printf("Couldn't write new file\n");
-			printf("File size: %zu, size wrote: %zu\n",file_size,size_wrote);
+			ONION_INFO("Couldn't write new file\n");
+			ONION_INFO("File size: %zu, size wrote: %zu\n",file_size,size_wrote);
 			exit(EXIT_FAILURE);
 		}
 		free(file_path);
@@ -235,6 +235,8 @@ void delete_files(){
 		file_list = file_list_to_string();
 		char *file = file_list;
 		while((file = strtok(file, "\n")) != NULL){
+			/* TODO: File name may contain special characters (", \( , etc.),
+			 * This makes the date command fail unless they are escaped */
 			char * file_path = NULL;
 			Sasprintf(file_path,"%s/%s",FILE_DIRECTORY,file);
 			char * command = NULL;
@@ -246,8 +248,7 @@ void delete_files(){
 			free(file_time_string);
 			pclose(command_stream);
 			if( current_time > (file_time + FILE_TTL)){
-				/* TODO: Use onion logging for this */
-				printf("current time: %u, file_time: %u, FILE_TTL: %u\n",current_time,
+				ONION_INFO("current time: %u, file_time: %u, FILE_TTL: %u\n",current_time,
 						file_time,FILE_TTL);
 				unlink(file_path);
 			}
