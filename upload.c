@@ -38,7 +38,7 @@ char * stream_to_buffer(FILE * input_stream){
 	/* TODO: AWFUL HACK!!! 
 	 * Extremely large value returned if input_stream is a pipe. FIXME please.
 	 */
-	int magic_number = 1024;
+	int magic_number = MAX_POST_SIZE;
 	if(input_file_size > magic_number){
 		input_file_size = magic_number;
 	}
