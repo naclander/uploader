@@ -184,9 +184,9 @@ onion_connection_status main_page(void *_, onion_request *req, onion_response *r
 onion_connection_status post_data(void *_, onion_request *req, onion_response *res){
 	const char *user_data=onion_request_get_post(req,"text");
 	const char * filename = onion_request_get_post(req,"file");
-	char * file_buffer = malloc(MAX_POST_SIZE);
 
 	if(user_data != NULL){
+		ONION_INFO("Uploading text string");
 		/* TODO: Find a way to not allocate a string for this */
 		char * command = NULL;
 		FILE * input_stream = fopen(TEXT_FILE,"a");
@@ -198,6 +198,7 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 		free(command);
 	}
 	if(filename != NULL){
+		ONION_INFO("Uploading file");
 		/* TODO: Verify filename is in correct format? */
 		char * file_buffer = NULL;
 		char * file_path = NULL;
