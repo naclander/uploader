@@ -35,9 +35,7 @@ size_t get_stream_size(FILE * f){
 char * stream_to_buffer(FILE * input_stream){
 	char * file_contents;
 	size_t input_file_size = get_stream_size(input_stream);
-	/* TODO: AWFUL HACK!!! 
-	 * Extremely large value returned if input_stream is a pipe. FIXME please.
-	 */
+	/* If its a pipe stream, cap the file size at MAX_POST_SIZE */
 	int magic_number = MAX_POST_SIZE;
 	if(input_file_size > magic_number){
 		input_file_size = magic_number;
@@ -211,11 +209,13 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 		}
 		/* TODO: Get the file path without allocating a new string */
 		Sasprintf(file_path,"%s/%s",FILE_DIRECTORY,filename);	
-		new_file = fopen(file_path,"w");
+		new_file = fopen(file_path,"w+b");
 		size_t file_size = get_stream_size(uploaded_file);
+		size_t size_wrote = 0;
 		file_buffer = stream_to_buffer(uploaded_file);	
-		if(fwrite(file_buffer,1,file_size,new_file) < file_size){
+		if((size_wrote = fwrite(file_buffer,1,file_size,new_file)) < file_size){
 			printf("Couldn't write new file\n");
+			printf("File size: %zu, size wrote: %zu\n",file_size,size_wrote);
 			exit(EXIT_FAILURE);
 		}
 		free(file_path);
@@ -228,17 +228,16 @@ onion_connection_status post_data(void *_, onion_request *req, onion_response *r
 }
 
 void delete_files(){
-	char * command = NULL;
-	char * file_list = NULL;
-	char * file_path = NULL;
 
 	while(1){
-		sleep(FILE_TTL/2);
 		unsigned int current_time = time(NULL);
+		char * file_list = NULL;
 		file_list = file_list_to_string();
 		char *file = file_list;
 		while((file = strtok(file, "\n")) != NULL){
+			char * file_path = NULL;
 			Sasprintf(file_path,"%s/%s",FILE_DIRECTORY,file);
+			char * command = NULL;
 			Sasprintf(command,"date -r %s +%%s",file_path);	
 			FILE * command_stream = popen(command,"r");
 			free(command);
@@ -247,6 +246,7 @@ void delete_files(){
 			free(file_time_string);
 			pclose(command_stream);
 			if( current_time > (file_time + FILE_TTL)){
+				/* TODO: Use onion logging for this */
 				printf("current time: %u, file_time: %u, FILE_TTL: %u\n",current_time,
 						file_time,FILE_TTL);
 				unlink(file_path);
@@ -258,6 +258,7 @@ void delete_files(){
 			free(file_path);
 			file = NULL;
 		}
+		sleep(FILE_TTL/2);
 	}
 }
 
