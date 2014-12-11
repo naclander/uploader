@@ -18,9 +18,10 @@ type JsonObject struct {
 }
 
 type File struct {
-	name string
+	Name string
 	TimeCreated int64
-	url  string
+	Hash string
+	Url  string
 }
 
 type Text struct {
@@ -36,11 +37,14 @@ type ServerInfoObject struct {
 
 var Contents JsonObject
 
+var FilesStorage = make(map[string]*bytes.Buffer)
+
 /* Iterate over Contents and remove items older than TTL */
 func RemoveExpiredItems() {
 	for i := 0; i < len(Contents.Files); i++ {
 		if (time.Now().Unix() - Contents.Files[i].TimeCreated > 
 		   Contents.Info.ObjectTTL) {
+			delete(FilesStorage, Contents.Files[i].Hash)
 			Contents.Files = append(Contents.Files[:i], Contents.Files[i+1:]...)
 		}	
 	}	
@@ -94,7 +98,35 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 			defer out.Close()
 
 			// write the content from POST to the file
+
+			NewRandomString := GenRandomString()
+			fmt.Printf("New string is %s\n\n\n",NewRandomString)
+			b := &bytes.Buffer{}
+			_, err = io.Copy(b,file)
+			if err != nil {
+				fmt.Fprintln(w, err)
+			}
+			FilesStorage[NewRandomString] = b
+			NewFile := File{
+				Name: html.EscapeString(header.Filename),
+				TimeCreated: time.Now().Unix(),
+				Hash: NewRandomString,
+				Url: "lol",
+			}
+			Contents.Files = append(Contents.Files, NewFile)
+			fmt.Println(Contents)
+			w.Header().Set("Content-Type", "application/json")
+			obj, err := json.Marshal(Contents)
+			os.Stdout.Write(obj)
+
+			if err == nil{
+				w.Write(obj)
+			} else{
+				fmt.Fprintln(w, err)
+			}
+
 			_, err = io.Copy(out, file)
+
 			if err != nil {
 				fmt.Fprintln(w, err)
 			}
@@ -109,7 +141,6 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 				TimeCreated: time.Now().Unix(),
 			}
 			Contents.Texts = append(Contents.Texts,NewText)
-			RemoveExpiredItems()
 			w.Header().Set("Content-Type", "application/json")
 			obj, err := json.Marshal(Contents)
 			//TODO Handle error
