@@ -59,27 +59,34 @@ Below is an example of a JSON object sent from the server to the client:
 
 ```
 {
-	"Server files": {
-		"Files" : {
-			"File 1" : {
-				"name": "File 1",
-				"date added" : "123456789"
-			},
-			"File 2" : {
-				"name": "File 1",
-				"date added" : "123456789"
-			}
-		},
-		"Text" : {
-			"text 1" : {
-				"content" : "I am a string",
-				"Date added" : "123456"
-			}
-		}
-	},
-	"Server info" : {
-		"IP address" : "192.168.2.1",
-		"Location" : "USA"
-	}
+   "Files":[
+      {
+         "Name":"document1.pdf",
+         "TimeCreated":1418341620,
+         "Hash":"b8b53e",
+         "Url":"http://example.com/b8b53e"
+      },
+      {
+         "Name":"document(2).pdf",
+         "TimeCreated":1418341622,
+         "Hash":"d28586",
+         "Url":"http://example.com/d28586"
+      }
+   ],
+   "Texts":[
+      {
+         "Content":"String 1",
+         "TimeCreated":1418341616
+      },
+      {
+         "Content":"String 2",
+         "TimeCreated":1418341618
+      }
+   ],
+   "Info":{
+      "IPAdress":"192.168.2.1",
+      "Location":"USA",
+      "ObjectTTL":300
+   }
 }
 ```
