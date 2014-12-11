@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"flag"
 )
 
 type JsonObject struct {
@@ -128,13 +129,18 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	AddrPtr := flag.String("address", "NA", "Server IP Address")
+	PortPtr := flag.String("port", "8080", "Port to run server on")
+	LocPtr := flag.String("location", "NA", "Server Geographical Location")
+	TTLPtr := flag.Int64("TTL", 300, "Time files and texts stay on server")
+	flag.Parse()
 	s := &http.Server{
-		Addr:           ":8080",
+		Addr:           ":" + *PortPtr,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	InitContents("192.168.LOL.LOL", "USAUSAUSA", 60)
+	InitContents(*AddrPtr, *LocPtr, *TTLPtr)
 	http.HandleFunc("/", MainResponse)
-	s.ListenAndServe()
+	panic(s.ListenAndServe())
 }
