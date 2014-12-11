@@ -30,15 +30,33 @@ type Text struct {
 type ServerInfoObject struct {
 	IPAdress string
 	Location string
+	ObjectTTL int64
 }
 
 var Contents JsonObject
 
-func InitContents(addr, location string) {
+/* Iterate over Contents and remove items older than TTL */
+func RemoveExpiredItems() {
+	for i := 0; i < len(Contents.Files); i++ {
+		if (time.Now().Unix() - Contents.Files[i].TimeCreated > 
+		   Contents.Info.ObjectTTL) {
+			Contents.Files = append(Contents.Files[:i], Contents.Files[i+1:]...)
+		}	
+	}	
+	for i := 0; i < len(Contents.Texts); i++ {
+		if (time.Now().Unix() - Contents.Texts[i].TimeCreated > 
+		   Contents.Info.ObjectTTL) {
+			Contents.Texts = append(Contents.Texts[:i], Contents.Texts[i+1:]...)
+		}	
+	}	
+}
+
+func InitContents(addr, location string, TTL int64) {
 	Contents = JsonObject{
 		Info: ServerInfoObject{
 			IPAdress: addr,
 			Location: location,
+			ObjectTTL: TTL,
 		},
 	}
 	obj, err := json.Marshal(Contents)
@@ -51,6 +69,7 @@ func InitContents(addr, location string) {
 func MainResponse(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
+		RemoveExpiredItems()
 		w.Header().Set("Content-Type", "application/json")
 		obj, err := json.Marshal(Contents)
 		//TODO Handle error
@@ -89,6 +108,7 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 				TimeCreated: time.Now().Unix(),
 			}
 			Contents.Texts = append(Contents.Texts,NewText)
+			RemoveExpiredItems()
 			w.Header().Set("Content-Type", "application/json")
 			obj, err := json.Marshal(Contents)
 			//TODO Handle error
@@ -114,7 +134,7 @@ func main() {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	InitContents("192.168.LOL.LOL", "USAUSAUSA")
+	InitContents("192.168.LOL.LOL", "USAUSAUSA", 60)
 	http.HandleFunc("/", MainResponse)
 	s.ListenAndServe()
 }
