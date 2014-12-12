@@ -1,17 +1,17 @@
 package main
 
 import (
+	"bytes"
+	"crypto/md5"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"html"
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
-	"flag"
-    "crypto/md5"
-    "strconv"
-	"bytes"
 )
 
 type JsonObject struct {
@@ -21,21 +21,21 @@ type JsonObject struct {
 }
 
 type File struct {
-	Name string
+	Name        string
 	TimeCreated int64
-	Hash string
-	Url  string
+	Hash        string
+	Url         string
 }
 
 type Text struct {
-	Content string
+	Content     string
 	TimeCreated int64
 }
 
 type ServerInfoObject struct {
 	SelfAddress string
-	Location string
-	ObjectTTL int64
+	Location    string
+	ObjectTTL   int64
 }
 
 var Contents JsonObject
@@ -45,26 +45,26 @@ var FilesStorage = make(map[string]*bytes.Buffer)
 /* Iterate over Contents and remove items older than TTL */
 func RemoveExpiredItems() {
 	for i := 0; i < len(Contents.Files); i++ {
-		if (time.Now().Unix() - Contents.Files[i].TimeCreated > 
-		   Contents.Info.ObjectTTL) {
+		if time.Now().Unix()-Contents.Files[i].TimeCreated >
+			Contents.Info.ObjectTTL {
 			delete(FilesStorage, Contents.Files[i].Hash)
 			Contents.Files = append(Contents.Files[:i], Contents.Files[i+1:]...)
-		}	
-	}	
+		}
+	}
 	for i := 0; i < len(Contents.Texts); i++ {
-		if (time.Now().Unix() - Contents.Texts[i].TimeCreated > 
-		   Contents.Info.ObjectTTL) {
+		if time.Now().Unix()-Contents.Texts[i].TimeCreated >
+			Contents.Info.ObjectTTL {
 			Contents.Texts = append(Contents.Texts[:i], Contents.Texts[i+1:]...)
-		}	
-	}	
+		}
+	}
 }
 
-func InitContents(location , selfAddr string, TTL int64) {
+func InitContents(location, selfAddr string, TTL int64) {
 	Contents = JsonObject{
 		Info: ServerInfoObject{
 			SelfAddress: selfAddr,
-			Location: location,
-			ObjectTTL: TTL,
+			Location:    location,
+			ObjectTTL:   TTL,
 		},
 	}
 	obj, err := json.Marshal(Contents)
@@ -74,11 +74,11 @@ func InitContents(location , selfAddr string, TTL int64) {
 	}
 }
 
-func GenRandomString(FileName string) string{
+func GenRandomString(FileName string) string {
 	NumChars := 6
 	hash := md5.New()
-	io.WriteString(hash, strconv.FormatInt(time.Now().UnixNano(), 10) + FileName )
-    return fmt.Sprintf("%x", hash.Sum(nil))[:NumChars]
+	io.WriteString(hash, strconv.FormatInt(time.Now().UnixNano(), 10)+FileName)
+	return fmt.Sprintf("%x", hash.Sum(nil))[:NumChars]
 }
 
 func MainResponse(w http.ResponseWriter, r *http.Request) {
@@ -86,18 +86,18 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		InputUrl := r.URL.String()[1:]
-		if InputUrl == ""{
+		if InputUrl == "" {
 			w.Header().Set("Content-Type", "application/json")
 			obj, err := json.Marshal(Contents)
 			//TODO Handle error
-			if err == nil{
+			if err == nil {
 				w.Write(obj)
 			}
-		} else if  FilesStorage[InputUrl] == nil {
-			 http.NotFound(w, r)
-			 return	
+		} else if FilesStorage[InputUrl] == nil {
+			http.NotFound(w, r)
+			return
 		} else {
-			fmt.Fprintf(w,"It exists!!!")
+			fmt.Fprintf(w, "It exists!!!")
 		}
 	case "POST":
 		file, header, err := r.FormFile("file")
@@ -119,44 +119,44 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 
 			NewRandomString := GenRandomString(header.Filename)
 			b := &bytes.Buffer{}
-			_, err = io.Copy(b,file)
+			_, err = io.Copy(b, file)
 			if err != nil {
 				fmt.Fprintln(w, err)
 			}
 			FilesStorage[NewRandomString] = b
 			Contents.Files = append(Contents.Files, File{
-				Name: html.EscapeString(header.Filename),
+				Name:        html.EscapeString(header.Filename),
 				TimeCreated: time.Now().Unix(),
-				Hash: NewRandomString,
-				Url: Contents.Info.SelfAddress + NewRandomString,
+				Hash:        NewRandomString,
+				Url:         Contents.Info.SelfAddress + NewRandomString,
 			})
 			fmt.Println(Contents)
 			w.Header().Set("Content-Type", "application/json")
 			obj, err := json.Marshal(Contents)
 			os.Stdout.Write(obj)
-			if err == nil{
+			if err == nil {
 				w.Write(obj)
-			} else{
+			} else {
 				fmt.Fprintln(w, err)
 			}
 
 		} else {
 			name := r.FormValue("text")
-			Contents.Texts = append(Contents.Texts,Text{
-				Content: name,
+			Contents.Texts = append(Contents.Texts, Text{
+				Content:     name,
 				TimeCreated: time.Now().Unix(),
 			})
 			w.Header().Set("Content-Type", "application/json")
 			obj, err := json.Marshal(Contents)
 			//TODO Handle error
-			if err == nil{
+			if err == nil {
 				w.Write(obj)
 			}
 			/*
-			obj,err := json.Marshal(Contents)
-			if err == nil{
-				os.Stdout.Write(obj)
-			}
+				obj,err := json.Marshal(Contents)
+				if err == nil{
+					os.Stdout.Write(obj)
+				}
 			*/
 		}
 	default:
@@ -167,8 +167,8 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 func main() {
 	PortPtr := flag.String("port", "8080", "Port to run server on")
 	LocPtr := flag.String("location", "NA", "Server Geographical Location")
-	SelfAddrPtr := flag.String("selfAddr", "localhost:" + *PortPtr + "/",
-				               "URL Address to access server")
+	SelfAddrPtr := flag.String("selfAddr", "localhost:"+*PortPtr+"/",
+		"URL Address to access server")
 	TTLPtr := flag.Int64("TTL", 300, "Time files and texts stay on server")
 	flag.Parse()
 	s := &http.Server{
