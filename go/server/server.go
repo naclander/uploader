@@ -100,16 +100,16 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 		} else {
 			/* Maybe don't set the Content Type (Not necessary)
 			 * Or, find a better way to store the content type so we avoid
-			 * Searching through all the Files 
+			 * Searching through all the Files
 			 */
 			var ContentType string
-			for i := 0; i < len(Contents.Files); i++{
-				if Contents.Files[i].Hash == InputUrl{
+			for i := 0; i < len(Contents.Files); i++ {
+				if Contents.Files[i].Hash == InputUrl {
 					ContentType = Contents.Files[i].ContentType
 				}
-			}		
+			}
 			w.Header().Set("Content-Type", ContentType)
-			io.Copy(w,FilesStorage[InputUrl])
+			io.Copy(w, FilesStorage[InputUrl])
 		}
 	case "POST":
 		file, header, err := r.FormFile("file")
