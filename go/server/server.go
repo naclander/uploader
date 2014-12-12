@@ -124,13 +124,12 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 				fmt.Fprintln(w, err)
 			}
 			FilesStorage[NewRandomString] = b
-			NewFile := File{
+			Contents.Files = append(Contents.Files, File{
 				Name: html.EscapeString(header.Filename),
 				TimeCreated: time.Now().Unix(),
 				Hash: NewRandomString,
 				Url: Contents.Info.SelfAddress + NewRandomString,
-			}
-			Contents.Files = append(Contents.Files, NewFile)
+			})
 			fmt.Println(Contents)
 			w.Header().Set("Content-Type", "application/json")
 			obj, err := json.Marshal(Contents)
@@ -143,11 +142,10 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 
 		} else {
 			name := r.FormValue("text")
-			NewText := Text{
+			Contents.Texts = append(Contents.Texts,Text{
 				Content: name,
 				TimeCreated: time.Now().Unix(),
-			}
-			Contents.Texts = append(Contents.Texts,NewText)
+			})
 			w.Header().Set("Content-Type", "application/json")
 			obj, err := json.Marshal(Contents)
 			//TODO Handle error
