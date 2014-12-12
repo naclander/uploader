@@ -25,6 +25,7 @@ type File struct {
 	TimeCreated int64
 	Hash        string
 	Url         string
+	ContentType string
 }
 
 type Text struct {
@@ -97,12 +98,22 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		} else {
-			fmt.Fprintf(w, "It exists!!!")
+			/* Maybe don't set the Content Type (Not necessary)
+			 * Or, find a better way to store the content type so we avoid
+			 * Searching through all the Files 
+			 */
+			var ContentType string
+			for i := 0; i < len(Contents.Files); i++{
+				if Contents.Files[i].Hash == InputUrl{
+					ContentType = Contents.Files[i].ContentType
+				}
+			}		
+			w.Header().Set("Content-Type", ContentType)
+			io.Copy(w,FilesStorage[InputUrl])
 		}
 	case "POST":
 		file, header, err := r.FormFile("file")
 		fmt.Println("Read file and header")
-
 		if err == nil {
 			fmt.Println("Uploading binary file")
 			defer file.Close()
@@ -129,6 +140,7 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 				TimeCreated: time.Now().Unix(),
 				Hash:        NewRandomString,
 				Url:         Contents.Info.SelfAddress + NewRandomString,
+				ContentType: header.Header.Get("Content-Type"),
 			})
 			fmt.Println(Contents)
 			w.Header().Set("Content-Type", "application/json")
