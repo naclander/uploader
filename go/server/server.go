@@ -45,16 +45,15 @@ var FilesStorage = make(map[string]*bytes.Buffer)
 
 /* Iterate over Contents and remove items older than TTL */
 func RemoveExpiredItems() {
+	CurrentTime := time.Now().Unix()
 	for i := 0; i < len(Contents.Files); i++ {
-		if time.Now().Unix()-Contents.Files[i].TimeCreated >
-			Contents.Info.ObjectTTL {
+		if CurrentTime-Contents.Files[i].TimeCreated > Contents.Info.ObjectTTL {
 			delete(FilesStorage, Contents.Files[i].Hash)
 			Contents.Files = append(Contents.Files[:i], Contents.Files[i+1:]...)
 		}
 	}
 	for i := 0; i < len(Contents.Texts); i++ {
-		if time.Now().Unix()-Contents.Texts[i].TimeCreated >
-			Contents.Info.ObjectTTL {
+		if CurrentTime-Contents.Texts[i].TimeCreated > Contents.Info.ObjectTTL {
 			Contents.Texts = append(Contents.Texts[:i], Contents.Texts[i+1:]...)
 		}
 	}
@@ -153,9 +152,8 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 			}
 
 		} else {
-			name := r.FormValue("text")
 			Contents.Texts = append(Contents.Texts, Text{
-				Content:     name,
+				Content:     r.FormValue("text"),
 				TimeCreated: time.Now().Unix(),
 			})
 			w.Header().Set("Content-Type", "application/json")
@@ -164,12 +162,6 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 			if err == nil {
 				w.Write(obj)
 			}
-			/*
-				obj,err := json.Marshal(Contents)
-				if err == nil{
-					os.Stdout.Write(obj)
-				}
-			*/
 		}
 	default:
 		return
