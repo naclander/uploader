@@ -34,12 +34,15 @@ type Text struct {
 }
 
 type ServerInfoObject struct {
-	SelfAddress string
-	Location    string
-	ObjectTTL   int64
+	SelfAddress   string
+	Location      string
+	MaxUploadSize int
+	ObjectTTL     int64
 }
 
 var Contents JsonObject
+
+var MaxUploadSize string
 
 var FilesStorage = make(map[string]*bytes.Buffer)
 
@@ -59,12 +62,13 @@ func RemoveExpiredItems() {
 	}
 }
 
-func InitContents(location, selfAddr string, TTL int64) {
+func InitContents(location, selfAddr string, MaxUploadSize int, TTL int64) {
 	Contents = JsonObject{
 		Info: ServerInfoObject{
-			SelfAddress: selfAddr,
-			Location:    location,
-			ObjectTTL:   TTL,
+			SelfAddress:   selfAddr,
+			Location:      location,
+			MaxUploadSize: MaxUploadSize,
+			ObjectTTL:     TTL,
 		},
 	}
 	obj, err := json.Marshal(Contents)
@@ -82,6 +86,13 @@ func GenRandomString(FileName string) string {
 }
 
 func MainResponse(w http.ResponseWriter, r *http.Request) {
+	if size, _ := strconv.Atoi(r.Header.Get("Content-Length")); size > Contents.Info.MaxUploadSize {
+		fmt.Println(size)
+		fmt.Println(Contents.Info.MaxUploadSize)
+		http.Error(w, "File too large", 413)
+		return
+	}
+
 	RemoveExpiredItems()
 	switch r.Method {
 	case "GET":
@@ -95,38 +106,16 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 			}
 		} else if FilesStorage[InputUrl] == nil {
 			http.NotFound(w, r)
-			return
 		} else {
-			/* Maybe don't set the Content Type (Not necessary)
-			 * Or, find a better way to store the content type so we avoid
-			 * Searching through all the Files
-			 */
-			var ContentType string
-			for i := 0; i < len(Contents.Files); i++ {
-				if Contents.Files[i].Hash == InputUrl {
-					ContentType = Contents.Files[i].ContentType
-				}
-			}
-			w.Header().Set("Content-Type", ContentType)
 			io.Copy(w, FilesStorage[InputUrl])
 		}
+		return
 	case "POST":
 		file, header, err := r.FormFile("file")
 		fmt.Println("Read file and header")
 		if err == nil {
 			fmt.Println("Uploading binary file")
 			defer file.Close()
-
-			out, err := os.Create("/tmp/uploadedfile")
-			if err != nil {
-				fmt.Fprintf(w, "Unable to create the file for writing")
-				return
-			}
-
-			defer out.Close()
-
-			// write the content from POST to the file
-
 			NewRandomString := GenRandomString(header.Filename)
 			b := &bytes.Buffer{}
 			_, err = io.Copy(b, file)
@@ -174,6 +163,7 @@ func main() {
 	SelfAddrPtr := flag.String("selfAddr", "localhost:"+*PortPtr+"/",
 		"URL Address to access server")
 	TTLPtr := flag.Int64("TTL", 300, "Time files and texts stay on server")
+	MaxUploadSizePtr := flag.Int("MaxUploadSize", 2048, "Maximum size of file uploaded")
 	flag.Parse()
 	s := &http.Server{
 		Addr:           ":" + *PortPtr,
@@ -181,7 +171,7 @@ func main() {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	InitContents(*LocPtr, *SelfAddrPtr, *TTLPtr)
+	InitContents(*LocPtr, *SelfAddrPtr, *MaxUploadSizePtr, *TTLPtr)
 	http.HandleFunc("/", MainResponse)
 	panic(s.ListenAndServe())
 }
