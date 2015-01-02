@@ -87,12 +87,9 @@ func GenRandomString(FileName string) string {
 
 func MainResponse(w http.ResponseWriter, r *http.Request) {
 	if size, _ := strconv.Atoi(r.Header.Get("Content-Length")); size > Contents.Info.MaxUploadSize {
-		fmt.Println(size)
-		fmt.Println(Contents.Info.MaxUploadSize)
 		http.Error(w, "File too large", 413)
 		return
 	}
-
 	RemoveExpiredItems()
 	switch r.Method {
 	case "GET":
