@@ -71,10 +71,10 @@ func InitContents(location, selfAddr string, MaxUploadSize int, TTL int64) {
 			ObjectTTL:     TTL,
 		},
 	}
-	obj, err := json.Marshal(Contents)
-	//TODO Handle error
-	if err == nil {
-		os.Stdout.Write(obj)
+	_, err := json.Marshal(Contents)
+	if err != nil {
+		fmt.Println("Failed during initialization")
+		os.Exit(1)
 	}
 }
 
@@ -97,9 +97,12 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 		if InputUrl == "" {
 			w.Header().Set("Content-Type", "application/json")
 			obj, err := json.Marshal(Contents)
-			//TODO Handle error
+			//TODO Save file with actuall name instead of hash
 			if err == nil {
 				w.Write(obj)
+			} else {
+				http.Error(w, "Coudln't marshall json", 500)
+				os.Exit(1)
 			}
 		} else if FilesStorage[InputUrl] == nil {
 			http.NotFound(w, r)
@@ -109,9 +112,7 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	case "POST":
 		file, header, err := r.FormFile("file")
-		fmt.Println("Read file and header")
 		if err == nil {
-			fmt.Println("Uploading binary file")
 			defer file.Close()
 			NewRandomString := GenRandomString(header.Filename)
 			b := &bytes.Buffer{}
@@ -127,10 +128,8 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 				Url:         Contents.Info.SelfAddress + NewRandomString,
 				ContentType: header.Header.Get("Content-Type"),
 			})
-			fmt.Println(Contents)
 			w.Header().Set("Content-Type", "application/json")
 			obj, err := json.Marshal(Contents)
-			os.Stdout.Write(obj)
 			if err == nil {
 				w.Write(obj)
 			} else {
@@ -138,15 +137,22 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 			}
 
 		} else {
+			content := r.FormValue("text")
+			if content == "" {
+				http.Error(w, "Input text cannot be empty", 400)
+				return
+			}
 			Contents.Texts = append(Contents.Texts, Text{
-				Content:     r.FormValue("text"),
+				Content:     content,
 				TimeCreated: time.Now().Unix(),
 			})
 			w.Header().Set("Content-Type", "application/json")
 			obj, err := json.Marshal(Contents)
-			//TODO Handle error
 			if err == nil {
 				w.Write(obj)
+			} else {
+				http.Error(w, "Couldn't marshal json for text", 500)
+				os.Exit(1)
 			}
 		}
 	default:
@@ -160,7 +166,7 @@ func main() {
 	SelfAddrPtr := flag.String("selfAddr", "localhost:"+*PortPtr+"/",
 		"URL Address to access server")
 	TTLPtr := flag.Int64("TTL", 300, "Time files and texts stay on server")
-	MaxUploadSizePtr := flag.Int("MaxUploadSize", 2048, "Maximum size of file uploaded")
+	MaxUploadSizePtr := flag.Int("MaxUploadSize", 2<<20, "Maximum size of file uploaded")
 	flag.Parse()
 	s := &http.Server{
 		Addr:           ":" + *PortPtr,
