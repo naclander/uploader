@@ -90,6 +90,8 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "File too large", 413)
 		return
 	}
+	/* Set header to enable AJAX for clients */
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	RemoveExpiredItems()
 	switch r.Method {
 	case "GET":
