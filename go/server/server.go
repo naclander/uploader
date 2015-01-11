@@ -24,7 +24,7 @@ type File struct {
 	Name        string
 	TimeCreated int64
 	Hash        string
-	Url         string
+	URL         string
 	ContentType string
 }
 
@@ -127,7 +127,7 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 				Name:        html.EscapeString(header.Filename),
 				TimeCreated: time.Now().Unix(),
 				Hash:        NewRandomString,
-				Url:         Contents.Info.SelfAddress + NewRandomString,
+				URL:         Contents.Info.SelfAddress + NewRandomString,
 				ContentType: header.Header.Get("Content-Type"),
 			})
 			w.Header().Set("Content-Type", "application/json")

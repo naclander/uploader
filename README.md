@@ -64,13 +64,13 @@ Below is an example of a JSON object sent from the server to the client:
          "Name":"document1.pdf",
          "TimeCreated":1418341620,
          "Hash":"b8b53e",
-         "Url":"http://example.com/b8b53e"
+         "URL":"http://example.com/b8b53e"
       },
       {
          "Name":"document(2).pdf",
          "TimeCreated":1418341622,
          "Hash":"d28586",
-         "Url":"http://example.com/d28586"
+         "URL":"http://example.com/d28586"
       }
    ],
    "Texts":[
