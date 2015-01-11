@@ -1,0 +1,116 @@
+ <!DOCTYPE html>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+<title>Uploader Client</title>
+
+<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+<script src="http://fb.me/react-0.12.2.js"></script>
+<script>
+
+function ShowState(json){
+	console.log(json.Info.SelfAddress);
+	console.log(json.Info.Location);
+	console.log(json.Info.MaxUploadSize);
+	console.log(json.Info.ObjectTTL);
+
+	var ServerInfo = React.createClass({
+		render: function(){
+			return(React.createElement("div", null,
+				   	React.createElement("h3", null,"Server Info"),
+					React.createElement("p", null,"Server Address: ", json.Info.SelfAddress),
+					React.createElement("p", null, "Server Location: ", json.Info.Location),
+					React.createElement("p", null, "Max Server Upload Size (bytes): ",
+					json.Info.MaxUploadSize),
+					React.createElement("p",null,"Time Objects will remain on server (seconds): ",
+					 json.Info.ObjectTTL))
+			);
+		}
+	});
+
+	var TextList = React.createClass({
+		render: function(){
+			text_component = []
+			if(json.Texts === null){
+				return(null)
+			}
+			$.each(json.Texts,function(index, element) {
+				text_component.push(React.createElement("li",null,element.Content))
+			})
+			return(React.createElement("div",null,
+						React.createElement("h3",null,"Text List"),
+						React.createElement("ul",null,
+							text_component)))
+		}
+	});
+
+	var FileList = React.createClass({
+		render: function(){
+			file_component = []
+			if(json.Files === null){
+				return(null)
+			}
+			$.each(json.Texts,function(index, element) {
+				file_component.push(React.createElement("li",null,element.Content))
+			})
+			return(React.createElement("div",null,
+						React.createElement("h3",null,"File List"),
+						React.createElement("ul",null,
+							text_component)))
+		}
+	});
+
+	var ServerContent = React.createClass({
+		render: function(){
+			return(
+				React.createElement("div", null,
+					React.createElement("h3",null,"Server Content"),
+					React.createElement(TextList,null),
+					React.createElement(FileList,null)
+				)	
+			);	
+		}
+	});
+
+	var Hello = React.createClass({
+		render: function() {
+    		return(React.createElement("div", null, "Hello: ", json.Info.SelfAddress,
+				    React.createElement(ServerInfo,null,document.body),
+					React.createElement(ServerContent,null,document.body))
+			);
+		}
+	});
+ 
+	React.render(React.createElement(Hello, null), document.body);
+}
+
+$.getJSON("http://localhost:8080/", ShowState).fail( function (){
+	alert("fail");
+});
+</script>
+
+<body>
+
+<div id="example"></div>
+
+<form action="http://localhost:8080/" method="post" enctype="multipart/form-data">
+<label for="file">Filename:</label>
+<input type="file" name="file" id="file">
+<input type="submit" name="submit" value="Submit">
+</form>
+
+<form action="http://localhost:8080/" method="post" enctype="multipart/form-data">
+<label for="file">Bad Form:</label>
+<input type="file" name="lol" id="lol">
+<input type="submit" name="submit" value="Submit">
+</form>
+
+<form action="http://localhost:8080/" method="post" enctype="multipart/form-data">
+<label for="text">Say something:</label>
+<input type="text" name="text" id="text">
+<input type="submit" name="submit" value="Submit">
+</form>
+
+<noscript>This web client requires JavaScript to be enabled.</noscript>
+
+</body>
+
