@@ -84,7 +84,7 @@ function ShowState(json){
 		}
 	});
 
-	var Server = React.createClass({
+	var Content = React.createClass({
 		render: function() {
     		return(React.createElement("div", null,
 				    React.createElement(ServerInfo,null,document.body),
@@ -92,7 +92,59 @@ function ShowState(json){
 			);
 		}
 	});
-	React.render(React.createElement(Server, null), document.body);
+
+
+	var textForm = React.createClass({
+		render: function(){
+			return(React.createElement("form",{action: "http://localhost:8080/",
+											   method: "post",
+											   encType: "multipart/form-data"},
+					 React.createElement("label", {htmlFor: "text"}, "Say Something:"),
+				     React.createElement("input", {type: "text",
+												   name: "text",
+												   id: "text"}),
+					 React.createElement("input", {type: "submit",
+												   name: "submit",
+										           value: "submit"}))
+			);
+		}
+	});
+
+	var fileForm = React.createClass({
+		render: function(){
+			return(React.createElement("form",{action: "http://localhost:8080/",
+											   method: "post",
+											   encType: "multipart/form-data"},
+					 React.createElement("label", {htmlFor: "file"}, "Filename:"),
+				     React.createElement("input", {type: "file",
+												   name: "file",
+												   id: "file"}),
+					 React.createElement("input", {type: "submit",
+												   name: "submit",
+										           value: "submit"}))
+			);
+		}
+	});
+	
+	var Forms = React.createClass({
+		render: function(){
+			return(React.createElement("div",null,
+				React.createElement(textForm,null,document.body),
+				React.createElement(fileForm,null,document.body))
+			);
+		}
+	});
+
+	var Server = React.createClass({
+		render: function(){
+			return(React.createElement("div",null,
+				React.createElement(Content,null,document.body),
+				React.createElement(Forms,null,document.body))
+			);
+		}
+	});
+
+	React.render(React.createElement(Server, null),document.body);
 }
 
 $.getJSON("http://localhost:8080/", ShowState).fail( function (){
