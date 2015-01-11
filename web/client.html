@@ -31,9 +31,9 @@ function ShowState(json){
 					React.createElement("p", null,"Server Address: ", json.Info.SelfAddress),
 					React.createElement("p", null, "Server Location: ", json.Info.Location),
 					React.createElement("p", null, "Max Server Upload Size (bytes): ",
-					json.Info.MaxUploadSize),
+										json.Info.MaxUploadSize),
 					React.createElement("p",null,"Time Objects will remain on server (seconds): ",
-					 json.Info.ObjectTTL))
+										json.Info.ObjectTTL))
 			);
 		}
 	});
@@ -62,13 +62,13 @@ function ShowState(json){
 				return(null)
 			}
 			$.each(json.Files ,function(index, element) {
-				text_component.push(React.createElement("li",null,element.Content,
-				" ---  ", "Created: " + formatUnixDate(element.TimeCreated)))
+				file_component.push(React.createElement("li",null,element.Name,
+				" ---  ", element.URL , " --- ", "Created: " + formatUnixDate(element.TimeCreated)))
 			})
 			return(React.createElement("div",null,
 						React.createElement("h3",null,"File List"),
 						React.createElement("ul",null,
-							text_component)))
+							file_component)))
 		}
 	});
 
@@ -84,7 +84,7 @@ function ShowState(json){
 		}
 	});
 
-	var Hello = React.createClass({
+	var Server = React.createClass({
 		render: function() {
     		return(React.createElement("div", null,
 				    React.createElement(ServerInfo,null,document.body),
@@ -92,8 +92,7 @@ function ShowState(json){
 			);
 		}
 	});
- 
-	React.render(React.createElement(Hello, null), document.body);
+	React.render(React.createElement(Server, null), document.body);
 }
 
 $.getJSON("http://localhost:8080/", ShowState).fail( function (){
