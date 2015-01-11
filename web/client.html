@@ -66,14 +66,14 @@ function ShowState(json){
 					React.createElement("h3",null,"Server Content"),
 					React.createElement(TextList,null),
 					React.createElement(FileList,null)
-				)	
-			);	
+				)
+			);
 		}
 	});
 
 	var Hello = React.createClass({
 		render: function() {
-    		return(React.createElement("div", null, "Hello: ", json.Info.SelfAddress,
+    		return(React.createElement("div", null,
 				    React.createElement(ServerInfo,null,document.body),
 					React.createElement(ServerContent,null,document.body))
 			);
@@ -84,7 +84,8 @@ function ShowState(json){
 }
 
 $.getJSON("http://localhost:8080/", ShowState).fail( function (){
-	alert("fail");
+	//TODO Improve display of this error
+	alert("Server is not running?");
 });
 </script>
 
@@ -95,12 +96,6 @@ $.getJSON("http://localhost:8080/", ShowState).fail( function (){
 <form action="http://localhost:8080/" method="post" enctype="multipart/form-data">
 <label for="file">Filename:</label>
 <input type="file" name="file" id="file">
-<input type="submit" name="submit" value="Submit">
-</form>
-
-<form action="http://localhost:8080/" method="post" enctype="multipart/form-data">
-<label for="file">Bad Form:</label>
-<input type="file" name="lol" id="lol">
 <input type="submit" name="submit" value="Submit">
 </form>
 
