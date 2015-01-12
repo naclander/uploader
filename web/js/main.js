@@ -1,5 +1,8 @@
 /* This is JavaScript written by a C programmer, you have been warned. */
 /* (Please help) */
+
+var serverAddress = "http://localhost:8080/"
+
 function UnixtoTwelveHour(timestamp) {
     var date = new Date(timestamp * 1000);
     var hours = date.getHours();
@@ -116,7 +119,7 @@ function ShowState(json) {
             return (React.createElement("form", {
                     id: "textForm",
                     //TODO let user set this
-                    action: "http://localhost:8080/",
+                    action: serverAddress,
                     method: "post",
                     encType: "multipart/form-data",
                     onSubmit: this.handleSubmit
@@ -164,7 +167,7 @@ function ShowState(json) {
             return (React.createElement("form", {
                     id: "fileForm",
                     //TODO let user set this
-                    action: "http://localhost:8080/",
+                    action: serverAddress,
                     method: "post",
                     encType: "multipart/form-data",
                     onSubmit: this.handleSubmit
@@ -202,7 +205,7 @@ function ShowState(json) {
     React.render(React.createElement(Server, null), document.body);
 }
 
-$.getJSON("http://localhost:8080/", ShowState).fail(function() {
+$.getJSON(serverAddress, ShowState).fail(function() {
     //TODO Improve display of this error
     alert("Server is not running?");
 })
