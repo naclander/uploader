@@ -1,5 +1,5 @@
 /* This is JavaScript written by a C programmer, you have been warned. */
-/* (Fixes are welcomed) */
+/* (Please help) */
 function UnixtoTwelveHour(timestamp) {
     var date = new Date(timestamp * 1000);
     var hours = date.getHours();
@@ -48,6 +48,7 @@ function ShowState(json) {
     });
 
     var FileList = React.createClass({
+		
         render: function() {
             file_component = []
             if (json.Files === null) {
@@ -55,7 +56,8 @@ function ShowState(json) {
             }
             $.each(json.Files, function(index, element) {
                 file_component.push(React.createElement("li", null, element.Name,
-                    " ---  ", element.URL, " --- ", "Created: " + UnixtoTwelveHour(element.TimeCreated)))
+                    " ---  ", React.createElement("a",{href: element.URL}, element.URL), 
+					" --- ", "Created: " + UnixtoTwelveHour(element.TimeCreated)))
             })
             return (React.createElement("div", null,
                 React.createElement("h3", null, "File List"),
@@ -86,13 +88,7 @@ function ShowState(json) {
 
 
     var textForm = React.createClass({
-        getInitialState: function() {
-            return {
-                text: ''
-            };
-        },
         handleSubmit: function(e) {
-
             $("#textForm").submit(function(e) {
                 var postData = $(this).serializeArray();
                 var formURL = $(this).attr("action");
@@ -111,19 +107,11 @@ function ShowState(json) {
             });
             $("#textForm").submit()
             e.preventDefault()
-            console.log(e)
-            console.log($('#textForm'))
-                //$('#textForm').ajaxForm({url: "http://localhost:8080/", type: 'post'})
-                //ShowState(this.refs.text)
-        },
-        onChange: function(e) {
-            this.setState({
-                text: e.target.value
-            });
         },
         render: function() {
             return (React.createElement("form", {
                     id: "textForm",
+					//TODO let user set this
                     action: "http://localhost:8080/",
                     method: "post",
                     encType: "multipart/form-data",
@@ -136,21 +124,43 @@ function ShowState(json) {
                     type: "text",
                     name: "text",
                     id: "text",
-                    onChange: this.onChange,
-                    value: this.state.text
                 }),
                 React.createElement("button", null, {
                     value: "submit"
                 })));
         }
     });
-
     var fileForm = React.createClass({
+        handleSubmit: function(e) {
+            $("#fileForm").submit(function(e) {
+                var postData = $(this).serializeArray();
+                var formURL = $(this).attr("action");
+                $.ajax({
+                    url: formURL,
+                    type: "POST",
+                    data: new FormData( this ),
+                    success: function(data, textStatus, jqXHR) {
+                        ShowState(data)
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        alert(errorThrown)
+                    },
+					processData: false,
+					contentType: false
+                });
+                e.preventDefault()
+            });
+            $("fileForm").submit()
+            e.preventDefault()
+        },
         render: function() {
             return (React.createElement("form", {
+					id: "fileForm",
+					//TODO let user set this
                     action: "http://localhost:8080/",
                     method: "post",
-                    encType: "multipart/form-data"
+                    encType: "multipart/form-data",
+					onSubmit: this.handleSubmit
                 },
                 React.createElement("label", {
                     htmlFor: "file"
