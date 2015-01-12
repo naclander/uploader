@@ -48,7 +48,7 @@ function ShowState(json) {
     });
 
     var FileList = React.createClass({
-		
+
         render: function() {
             file_component = []
             if (json.Files === null) {
@@ -56,8 +56,10 @@ function ShowState(json) {
             }
             $.each(json.Files, function(index, element) {
                 file_component.push(React.createElement("li", null, element.Name,
-                    " ---  ", React.createElement("a",{href: element.URL}, element.URL), 
-					" --- ", "Created: " + UnixtoTwelveHour(element.TimeCreated)))
+                    " ---  ", React.createElement("a", {
+                        href: element.URL
+                    }, element.URL),
+                    " --- ", "Created: " + UnixtoTwelveHour(element.TimeCreated)))
             })
             return (React.createElement("div", null,
                 React.createElement("h3", null, "File List"),
@@ -100,6 +102,8 @@ function ShowState(json) {
                         ShowState(data)
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
+                        /* TODO We probably got here if the text message was empty
+                         * or too large. Explain this more gracefully. */
                         alert("fail")
                     }
                 });
@@ -111,7 +115,7 @@ function ShowState(json) {
         render: function() {
             return (React.createElement("form", {
                     id: "textForm",
-					//TODO let user set this
+                    //TODO let user set this
                     action: "http://localhost:8080/",
                     method: "post",
                     encType: "multipart/form-data",
@@ -138,29 +142,32 @@ function ShowState(json) {
                 $.ajax({
                     url: formURL,
                     type: "POST",
-                    data: new FormData( this ),
+                    data: new FormData(this),
                     success: function(data, textStatus, jqXHR) {
                         ShowState(data)
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
+                        /* TODO We probably got here because the file being
+                         * uploaded was too big. Explain this more
+                         * gracefully. */
                         alert(errorThrown)
                     },
-					processData: false,
-					contentType: false
+                    processData: false,
+                    contentType: false
                 });
                 e.preventDefault()
             });
-            $("fileForm").submit()
+            $("#fileForm").submit()
             e.preventDefault()
         },
         render: function() {
             return (React.createElement("form", {
-					id: "fileForm",
-					//TODO let user set this
+                    id: "fileForm",
+                    //TODO let user set this
                     action: "http://localhost:8080/",
                     method: "post",
                     encType: "multipart/form-data",
-					onSubmit: this.handleSubmit
+                    onSubmit: this.handleSubmit
                 },
                 React.createElement("label", {
                     htmlFor: "file"
@@ -170,9 +177,7 @@ function ShowState(json) {
                     name: "file",
                     id: "file"
                 }),
-                React.createElement("input", {
-                    type: "submit",
-                    name: "submit",
+                React.createElement("button", null, {
                     value: "submit"
                 })));
         }
