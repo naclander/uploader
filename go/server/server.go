@@ -165,7 +165,7 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 func main() {
 	PortPtr := flag.String("port", "8080", "Port to run server on")
 	LocPtr := flag.String("location", "NA", "Server Geographical Location")
-	SelfAddrPtr := flag.String("selfAddr", "localhost:"+*PortPtr+"/",
+	SelfAddrPtr := flag.String("selfAddr", "http://localhost:"+*PortPtr+"/",
 		"URL Address to access server")
 	TTLPtr := flag.Int64("TTL", 300, "Time files and texts stay on server")
 	MaxUploadSizePtr := flag.Int("MaxUploadSize", 2<<20, "Maximum size of file uploaded")
