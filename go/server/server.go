@@ -48,18 +48,24 @@ var FilesStorage = make(map[string]*bytes.Buffer)
 
 /* Iterate over Contents and remove items older than TTL */
 func RemoveExpiredItems() {
+	var UnexpiredFiles []File
+	var UnexpiredTexts []Text
 	CurrentTime := time.Now().Unix()
-	for i := 0; i < len(Contents.Files); i++ {
-		if CurrentTime-Contents.Files[i].TimeCreated > Contents.Info.ObjectTTL {
-			delete(FilesStorage, Contents.Files[i].Hash)
-			Contents.Files = append(Contents.Files[:i], Contents.Files[i+1:]...)
+	for _, file := range Contents.Files {
+		if CurrentTime-file.TimeCreated >= Contents.Info.ObjectTTL {
+			delete(FilesStorage, file.Hash)
+		} else {
+			UnexpiredFiles = append(UnexpiredFiles, file)
 		}
 	}
-	for i := 0; i < len(Contents.Texts); i++ {
-		if CurrentTime-Contents.Texts[i].TimeCreated > Contents.Info.ObjectTTL {
-			Contents.Texts = append(Contents.Texts[:i], Contents.Texts[i+1:]...)
+	Contents.Files = UnexpiredFiles
+
+	for _, text := range Contents.Texts {
+		if CurrentTime-text.TimeCreated < Contents.Info.ObjectTTL {
+			UnexpiredTexts = append(UnexpiredTexts, text)
 		}
 	}
+	Contents.Texts = UnexpiredTexts
 }
 
 func InitContents(location, selfAddr string, MaxUploadSize int, TTL int64) {
