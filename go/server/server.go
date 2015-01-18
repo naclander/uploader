@@ -46,13 +46,17 @@ var MaxUploadSize string
 
 var FilesStorage = make(map[string]*bytes.Buffer)
 
+func OutOfDate(timeCreated int64) bool{
+	CurrentTime := time.Now().Unix()
+	return CurrentTime - timeCreated >= Contents.Info.ObjectTTL
+ }
+
 /* Iterate over Contents and remove items older than TTL */
 func RemoveExpiredItems() {
 	var UnexpiredFiles []File
 	var UnexpiredTexts []Text
-	CurrentTime := time.Now().Unix()
 	for _, file := range Contents.Files {
-		if CurrentTime-file.TimeCreated >= Contents.Info.ObjectTTL {
+		if OutOfDate(file.TimeCreated){
 			delete(FilesStorage, file.Hash)
 		} else {
 			UnexpiredFiles = append(UnexpiredFiles, file)
@@ -61,7 +65,7 @@ func RemoveExpiredItems() {
 	Contents.Files = UnexpiredFiles
 
 	for _, text := range Contents.Texts {
-		if CurrentTime-text.TimeCreated < Contents.Info.ObjectTTL {
+		if OutOfDate(text.TimeCreated){
 			UnexpiredTexts = append(UnexpiredTexts, text)
 		}
 	}
