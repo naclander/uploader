@@ -65,7 +65,7 @@ func RemoveExpiredItems() {
 	Contents.Files = UnexpiredFiles
 
 	for _, text := range Contents.Texts {
-		if OutOfDate(text.TimeCreated){
+		if !OutOfDate(text.TimeCreated){
 			UnexpiredTexts = append(UnexpiredTexts, text)
 		}
 	}
