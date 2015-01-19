@@ -191,12 +191,12 @@ function ShowState(json) {
 
     var Server = React.createClass({
         render: function() {
-            return (React.createElement("div", null,
+            return (React.createElement("div", {id: "top"},
+				React.createElement("h1",{id: "banner"}, "Uploader"),
                 React.createElement(Content, null, document.body),
                 React.createElement(Forms, null, document.body)));
         }
     });
-
     React.render(React.createElement(Server, null), document.body);
 }
 

@@ -1,0 +1,26 @@
+body {
+	margin:0;
+	padding:0;
+}
+h3 {
+	font-family: 'BPreplay';
+	font-weight: 400;
+	font-size: 200%;
+}
+
+#banner {
+	font-family: 'BPreplay';
+	font-weight: 400;
+	font-size: 400%;
+
+	text-align: center;
+	background-color: #6795C9;
+	margin:0;
+	padding:5%;
+}
+
+:not(h3) {
+
+	font-family: 'Source Serif Pro';
+	font-size: 100%;
+}
