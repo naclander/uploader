@@ -15,11 +15,6 @@ function UnixtoTwelveHour(timestamp) {
 }
 
 function ShowState(json) {
-    console.log(json.Info.SelfAddress);
-    console.log(json.Info.Location);
-    console.log(json.Info.MaxUploadSize);
-    console.log(json.Info.ObjectTTL);
-
     var ServerInfo = React.createClass({
         render: function() {
             return (React.createElement("div", null,
