@@ -35,7 +35,6 @@ type Text struct {
 
 type ServerInfoObject struct {
 	SelfAddress   string
-	Location      string
 	MaxUploadSize int
 	ObjectTTL     int64
 }
@@ -72,11 +71,10 @@ func RemoveExpiredItems() {
 	Contents.Texts = UnexpiredTexts
 }
 
-func InitContents(location, selfAddr string, MaxUploadSize int, TTL int64) {
+func InitContents(selfAddr string, MaxUploadSize int, TTL int64) {
 	Contents = JsonObject{
 		Info: ServerInfoObject{
 			SelfAddress:   selfAddr,
-			Location:      location,
 			MaxUploadSize: MaxUploadSize,
 			ObjectTTL:     TTL,
 		},
@@ -173,12 +171,15 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	PortPtr := flag.String("port", "8080", "Port to run server on")
-	LocPtr := flag.String("location", "NA", "Server Geographical Location")
-	SelfAddrPtr := flag.String("selfAddr", "http://localhost:"+*PortPtr+"/",
-		"URL Address to access server")
-	TTLPtr := flag.Int64("TTL", 300, "Time files and texts stay on server")
-	MaxUploadSizePtr := flag.Int("MaxUploadSize", 2<<20, "Maximum size of file uploaded")
+	DefaultPort := "8080"
+	DefaultAddr := "http://localhost:" + DefaultPort + "/"
+	DefaultTTL := int64(300)
+	DefaultUploadSize := 2500000
+
+	PortPtr := flag.String("port", DefaultPort, "Port to run server on")
+	SelfAddrPtr := flag.String("selfAddr", DefaultAddr, "URL Address to access server")
+	TTLPtr := flag.Int64("TTL", DefaultTTL, "Time files and texts stay on server")
+	MaxUploadSizePtr := flag.Int("MaxUploadSize", DefaultUploadSize, "Maximum size of file uploaded")
 	flag.Parse()
 	s := &http.Server{
 		Addr:           ":" + *PortPtr,
@@ -186,7 +187,7 @@ func main() {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	InitContents(*LocPtr, *SelfAddrPtr, *MaxUploadSizePtr, *TTLPtr)
+	InitContents(*SelfAddrPtr, *MaxUploadSizePtr, *TTLPtr)
 	http.HandleFunc("/", MainResponse)
 	panic(s.ListenAndServe())
 }

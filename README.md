@@ -85,7 +85,6 @@ Below is an example of a JSON object sent from the server to the client:
    ],
    "Info":{
       "SelfAddress":"192.168.2.1",
-      "Location":"USA",
       "MaxUploadSize":"2048",
       "ObjectTTL":300
    }
