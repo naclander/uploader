@@ -17,14 +17,15 @@ function UnixtoTwelveHour(timestamp) {
 function ShowState(json) {
     var ServerInfo = React.createClass({
         render: function() {
-            return (React.createElement("div", null,
-                React.createElement("h3", null, "Server Info"),
-                React.createElement("p", null, "Server Address: ", json.Info.SelfAddress),
-                React.createElement("p", null, "Server Location: ", json.Info.Location),
-                React.createElement("p", null, "Max Server Upload Size (bytes): ",
-                    json.Info.MaxUploadSize),
-                React.createElement("p", null, "Time Objects will remain on server (seconds): ",
-                    json.Info.ObjectTTL)));
+            return (React.createElement("div", {id: "ServerInfo"},
+                React.createElement("div", {id: "lcol"}, "Server Address: ",
+					React.createElement("br"),json.Info.SelfAddress),
+                React.createElement("div", {id: "lcol"},
+					"Maximum File Size: ", React.createElement("br"),
+					parseFloat(json.Info.MaxUploadSize)/1000000, " Megabytes"),
+                React.createElement("div", {id: "lcol"},
+					"Time Objects will remain on server: ",
+					React.createElement("br"),parseFloat(json.Info.ObjectTTL)/60, " minutes")));
         }
     });
 
@@ -80,7 +81,7 @@ function ShowState(json) {
 
     var Content = React.createClass({
         render: function() {
-            return (React.createElement("div", null,
+            return (React.createElement("div", {id: "Content"},
                 React.createElement(ServerInfo, null, document.body),
                 React.createElement(ServerContent, null, document.body)));
         }
@@ -120,7 +121,7 @@ function ShowState(json) {
                     onSubmit: this.handleSubmit
                 },
                 React.createElement("label", {
-                    htmlFor: "text"
+                    htmlFor: "text",
                 }, "Say Something:"),
                 React.createElement("input", {
                     type: "text",
