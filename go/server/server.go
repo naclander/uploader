@@ -117,7 +117,12 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 		} else if FilesStorage[InputUrl] == nil {
 			http.NotFound(w, r)
 		} else {
-			io.Copy(w, FilesStorage[InputUrl])
+			retrievedFile := (*FilesStorage[InputUrl])
+			fileSize := int64(retrievedFile.Len())
+			written ,  err := io.Copy(w, bytes.NewReader(retrievedFile.Bytes()))
+			if(written != fileSize || err != nil){
+				os.Exit(1)
+			}
 		}
 		return
 	case "POST":
