@@ -45,26 +45,24 @@ var MaxUploadSize string
 
 var FilesStorage = make(map[string]*bytes.Buffer)
 
-func OutOfDate(timeCreated int64) bool {
-	CurrentTime := time.Now().Unix()
-	return CurrentTime-timeCreated >= Contents.Info.ObjectTTL
+func isExpired(timeCreated int64) bool {
+	return (time.Now().Unix()-timeCreated >= Contents.Info.ObjectTTL)
 }
 
-/* Iterate over Contents and remove items older than TTL */
+/* Remove objects alive longer than TTL */
 func RemoveExpiredItems() {
 	var UnexpiredFiles []File
 	var UnexpiredTexts []Text
 	for _, file := range Contents.Files {
-		if OutOfDate(file.TimeCreated) {
+		if isExpired(file.TimeCreated) {
 			delete(FilesStorage, file.Hash)
 		} else {
 			UnexpiredFiles = append(UnexpiredFiles, file)
 		}
 	}
 	Contents.Files = UnexpiredFiles
-
 	for _, text := range Contents.Texts {
-		if !OutOfDate(text.TimeCreated) {
+		if !isExpired(text.TimeCreated) {
 			UnexpiredTexts = append(UnexpiredTexts, text)
 		}
 	}
@@ -119,8 +117,10 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 		} else {
 			retrievedFile := (*FilesStorage[InputUrl])
 			fileSize := int64(retrievedFile.Len())
-			written ,  err := io.Copy(w, bytes.NewReader(retrievedFile.Bytes()))
-			if(written != fileSize || err != nil){
+			/* Need to create a Reader so we can send the file again next time
+			 * It is requested. */
+			written, err := io.Copy(w, bytes.NewReader(retrievedFile.Bytes()))
+			if written != fileSize || err != nil {
 				os.Exit(1)
 			}
 		}
@@ -178,8 +178,8 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 func main() {
 	DefaultPort := "8080"
 	DefaultAddr := "http://localhost:" + DefaultPort + "/"
-	DefaultTTL := int64(300)
-	DefaultUploadSize := 2500000
+	DefaultTTL := int64(300)     /* 5 Minutes */
+	DefaultUploadSize := 2500000 /* 2.5 Megabytes */
 
 	PortPtr := flag.String("port", DefaultPort, "Port to run server on")
 	SelfAddrPtr := flag.String("selfAddr", DefaultAddr, "URL Address to access server")
