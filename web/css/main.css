@@ -1,22 +1,23 @@
 body {
 	margin:0;
 	padding:0;
+	background-color: #EFF3FF;
 }
 h3 {
-	font-family: 'BPreplay';
+	font-family: 'Roboto';
 	font-weight: 400;
 	font-size: 200%;
 }
 
 #banner {
-	font-family: 'BPreplay';
+	font-family: 'Roboto';
 	font-weight: 400;
 	font-size: 400%;
-
+	color: #FFEDBC;
 	text-align: center;
-	background-color: #6795C9;
+	background-color: #BCCCFF;
 	margin:0;
-	padding:5%;
+	padding:2%;
 }
 
 :not(h3) {
@@ -24,3 +25,27 @@ h3 {
 	font-family: 'Source Serif Pro';
 	font-size: 100%;
 }
+
+
+#ServerInfo{
+	text-align: center;
+	min-width: 0;
+	padding:2%;
+	background-color: #B2B2B2;
+ 	/*background: linear-gradient(#B2B2B2, #EFF3FF);*/
+}
+
+.lcol { 
+	text-align: center;
+	display:inline-block;
+	vertical-align:top;
+	width:25%;
+}
+
+#fileList, #textList {
+	text-align: center;
+	display:inline-block;
+	vertical-align:top;
+	width:50%;
+}
+

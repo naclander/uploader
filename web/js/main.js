@@ -18,12 +18,12 @@ function ShowState(json) {
     var ServerInfo = React.createClass({
         render: function() {
             return (React.createElement("div", {id: "ServerInfo"},
-                React.createElement("div", {id: "lcol"}, "Server Address: ",
+                React.createElement("div", {className: "lcol"}, "Server Address: ",
 					React.createElement("br"),json.Info.SelfAddress),
-                React.createElement("div", {id: "lcol"},
+                React.createElement("div", {className: "lcol"},
 					"Maximum File Size: ", React.createElement("br"),
 					parseFloat(json.Info.MaxUploadSize)/1000000, " Megabytes"),
-                React.createElement("div", {id: "lcol"},
+                React.createElement("div", {className: "lcol"},
 					"Time Objects will remain on server: ",
 					React.createElement("br"),parseFloat(json.Info.ObjectTTL)/60, " minutes")));
         }
@@ -33,13 +33,14 @@ function ShowState(json) {
         render: function() {
             text_component = []
             if (json.Texts === null) {
-                return (null)
+                return (React.createElement("div",{id: "textList"},
+							React.createElement("h3",null,"Text List")))
             }
             $.each(json.Texts, function(index, element) {
                 text_component.push(React.createElement("li", null, element.Content,
                     " ---  ", "Created: " + UnixtoTwelveHour(element.TimeCreated)))
             })
-            return (React.createElement("div", null,
+            return (React.createElement("div", {id: "textList"},
                 React.createElement("h3", null, "Text List"),
                 React.createElement("ul", null,
                     text_component)))
@@ -51,7 +52,8 @@ function ShowState(json) {
         render: function() {
             file_component = []
             if (json.Files === null) {
-                return (null)
+                return (React.createElement("div",{id: "fileList"},
+							React.createElement("h3",null,"File List")))
             }
             $.each(json.Files, function(index, element) {
                 file_component.push(React.createElement("li", null, element.Name,
@@ -60,7 +62,7 @@ function ShowState(json) {
                     }, element.URL),
                     " --- ", "Created: " + UnixtoTwelveHour(element.TimeCreated)))
             })
-            return (React.createElement("div", null,
+            return (React.createElement("div", {id: "fileList"},
                 React.createElement("h3", null, "File List"),
                 React.createElement("ul", null,
                     file_component)))
@@ -71,7 +73,6 @@ function ShowState(json) {
         render: function() {
             return (
                 React.createElement("div", null,
-                    React.createElement("h3", null, "Server Content"),
                     React.createElement(TextList, null),
                     React.createElement(FileList, null)
                 )
