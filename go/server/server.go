@@ -69,10 +69,10 @@ func RemoveExpiredItems() {
 	Contents.Texts = UnexpiredTexts
 }
 
-func InitContents(selfAddr string, MaxUploadSize int, TTL int64) {
+func InitContents(selfAddr, port string, MaxUploadSize int, TTL int64) {
 	Contents = JsonObject{
 		Info: ServerInfoObject{
-			SelfAddress:   selfAddr,
+			SelfAddress:   selfAddr + ":" + port + "/",
 			MaxUploadSize: MaxUploadSize,
 			ObjectTTL:     TTL,
 		},
@@ -177,7 +177,7 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	DefaultPort := "8080"
-	DefaultAddr := "http://localhost:" + DefaultPort + "/"
+	DefaultAddr := "http://localhost"
 	DefaultTTL := int64(300)     /* 5 Minutes */
 	DefaultUploadSize := 2500000 /* 2.5 Megabytes */
 
@@ -192,7 +192,7 @@ func main() {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	InitContents(*SelfAddrPtr, *MaxUploadSizePtr, *TTLPtr)
+	InitContents(*SelfAddrPtr, *PortPtr, *MaxUploadSizePtr, *TTLPtr)
 	http.HandleFunc("/", MainResponse)
 	panic(s.ListenAndServe())
 }
