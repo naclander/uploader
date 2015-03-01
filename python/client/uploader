@@ -1,0 +1,146 @@
+#!/bin/python
+
+import os.path
+import requests
+import datetime
+from os.path import expanduser
+from urllib import request
+import argparse, json, urllib
+
+CONFIG_FILE_NAME = ".uploader"
+SERVER_ADDRESS = ""
+
+''' **************************************** 
+    Utility
+    **************************************** '''
+
+class colors:
+    HEADER  = "\033[95m"
+    OKBLUE  = "\033[94m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL    = "\033[91m"
+    ENDC    = "\033[0m"
+    BOLD    = "\033[1m"
+
+def print_header(text):
+    print(colors.OKGREEN + "---------------------------------" + colors.ENDC)
+    print(colors.OKBLUE  + str(text) + colors.ENDC)
+    print(colors.OKGREEN + "---------------------------------" + colors.ENDC)
+
+def fetch_and_format_time(json_item):
+        current_time = json_item["TimeCreated"] 
+        pretty_time = datetime.datetime.fromtimestamp(
+            int(current_time)).strftime('%I:%M:%S')
+        print(pretty_time,end=" ")
+
+
+''' **************************************** 
+    Primary Server Class 
+    **************************************** '''
+
+class Server:
+    def __init__(self, address):
+        self.address = address
+        try:
+            self.state = json.loads(requests.get(address).text)
+        except requests.exceptions.RequestException as e:
+            print(colors.FAIL + "No connection to server" + colors.ENDC)
+
+    @staticmethod
+    def preface_tiem():
+        pass
+
+    def info(self):
+        print_header("Info:")
+        info = self.state["Info"]
+        if info is None:
+            print("No info to show")
+        else:
+            for item in info:
+               print(item + ": " + str(info[item]))
+
+    def files(self):
+        files = self.state["Files"]
+        if files is None:
+            print("No files to show")
+        else:
+            print_header("Files:")
+            for item in files:
+                fetch_and_format_time(item)
+                print(item["Name"])
+
+    def texts(self):
+        texts = self.state["Texts"]
+        if texts is None:
+            print(colors.FAIL + "No texts to show" + colors.ENDC)
+        else:
+            print_header("Texts:")
+            for item in texts:
+                fetch_and_format_time(item)
+                print(item["Content"])
+
+    def upload_file(self,file_path):
+        #TODO what if file_path is incorrect?
+        f = {'file': open(file_path, "rb")}
+        try:
+            requests.post(self.address,files=f)
+        except requests.exceptions.RequestException as e:
+            print("Something bad")
+
+    def upload_text(self,text):
+        payload = {"text": text}
+        try:
+            requests.post(self.address,payload)
+        except requests.exceptions.RequestException as e:
+            print("Something bad")
+
+def x(x_center, y_center, values):
+    print("X center:", x_center)
+    print("Y center:", y_center)
+    print("Values:", values)
+
+def parse_config(config_location):
+    f = open(config_location)
+    global SERVER_ADDRESS
+    SERVER_ADDRESS = f.read()
+
+def configure(config_location):
+    serverAddress = input("Server address: ")
+    with open(config_location, "a") as myfile:
+        myfile.write(serverAddress)
+    parse_config(config_location)
+
+''' **************************************** 
+    Main
+    **************************************** '''
+
+def main():
+    """ Check if a config file exists and configure client"""
+    config_location = expanduser("~") + "/" + CONFIG_FILE_NAME
+    if os.path.isfile(config_location):
+        parse_config(config_location)       
+    else:
+        configure(config_location)
+
+    srvr = Server(SERVER_ADDRESS)
+    srvr.info()
+    srvr.texts()
+    srvr.files()
+    srvr.upload_text("hi")
+    srvr.upload_file("/home/hemite/.uploader")
+    parser = argparse.ArgumentParser(description="Control Uploader client")
+    """"
+    parser.add_argument('-x', '--x-center', type=float, required=True)
+    parser.add_argument('-y', '--y-center', type=float, required=True)
+    parser.add_argument('values', type=float, nargs='*')
+    args = parser.parse_args()
+    x(args.x_center, args.y_center, args.values)
+    """
+
+
+if __name__ == '__main__':
+    #try:
+    main()
+    #except:
+    #    print(colors.FAIL + "Whoops!\nSomething went wrong" + colors.ENDC)  
