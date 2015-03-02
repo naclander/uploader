@@ -1,13 +1,16 @@
 #!/bin/python
 
+import datetime
+import json
 import os.path
 import requests
-import datetime
+import sys
+import urllib
 from os.path import expanduser
 from urllib import request
-import argparse, json, urllib
 
 CONFIG_FILE_NAME = ".uploader"
+CONFIG_LOCATION = expanduser("~") + "/" + CONFIG_FILE_NAME
 SERVER_ADDRESS = ""
 
 ''' **************************************** 
@@ -28,12 +31,18 @@ def print_header(text):
     print(colors.OKBLUE  + str(text) + colors.ENDC)
     print(colors.OKGREEN + "---------------------------------" + colors.ENDC)
 
+def print_warning(message):
+    print(colors.WARNING + message + colors.ENDC)
+
 def fetch_and_format_time(json_item):
         current_time = json_item["TimeCreated"] 
         pretty_time = datetime.datetime.fromtimestamp(
             int(current_time)).strftime('%I:%M:%S')
         print(pretty_time,end=" ")
 
+def die(message):
+    print(colors.BOLD + colors.FAIL + str(message) + colors.ENDC)
+    sys.exit(1)
 
 ''' **************************************** 
     Primary Server Class 
@@ -45,7 +54,7 @@ class Server:
         try:
             self.state = json.loads(requests.get(address).text)
         except requests.exceptions.RequestException as e:
-            print(colors.FAIL + "No connection to server" + colors.ENDC)
+            die("No connection to server")
 
     @staticmethod
     def preface_tiem():
@@ -63,17 +72,18 @@ class Server:
     def files(self):
         files = self.state["Files"]
         if files is None:
-            print("No files to show")
+            print_warning("No files to show")
         else:
             print_header("Files:")
             for item in files:
                 fetch_and_format_time(item)
-                print(item["Name"])
+                print(item["Name"],end=" ")
+                print(item["URL"])
 
     def texts(self):
         texts = self.state["Texts"]
         if texts is None:
-            print(colors.FAIL + "No texts to show" + colors.ENDC)
+            print_warning("No texts to show")
         else:
             print_header("Texts:")
             for item in texts:
@@ -81,29 +91,32 @@ class Server:
                 print(item["Content"])
 
     def upload_file(self,file_path):
-        #TODO what if file_path is incorrect?
+        if not os.path.isfile(file_path):
+            die("File does not exist")
         f = {'file': open(file_path, "rb")}
         try:
             requests.post(self.address,files=f)
         except requests.exceptions.RequestException as e:
-            print("Something bad")
+            die("Couldn't upload file'")
 
     def upload_text(self,text):
         payload = {"text": text}
         try:
             requests.post(self.address,payload)
         except requests.exceptions.RequestException as e:
-            print("Something bad")
+            die("Couldn't upload text'")
 
-def x(x_center, y_center, values):
-    print("X center:", x_center)
-    print("Y center:", y_center)
-    print("Values:", values)
+''' ****************************************
+    Client functions
+    **************************************** '''
 
 def parse_config(config_location):
     f = open(config_location)
     global SERVER_ADDRESS
     SERVER_ADDRESS = f.read()
+
+def kill_config():
+    os.remove(CONFIG_LOCATION)
 
 def configure(config_location):
     serverAddress = input("Server address: ")
@@ -111,36 +124,58 @@ def configure(config_location):
         myfile.write(serverAddress)
     parse_config(config_location)
 
+def reset_configuration():
+    kill_config()
+    configure(CONFIG_LOCATION)
+
+def usage():
+    print("Usage: uploader [option] [message|file]")
+
+def client_texts(arguments, srvr):
+    if(len(arguments) > 1):
+        srvr.upload_text(arguments[1])
+    else:
+        srvr.texts()
+
+def client_files(arguments, srvr):
+    if(len(arguments) > 1):
+        srvr.upload_file(arguments[1])
+    else:
+        srvr.files()
+
 ''' **************************************** 
     Main
     **************************************** '''
 
-def main():
-    """ Check if a config file exists and configure client"""
-    config_location = expanduser("~") + "/" + CONFIG_FILE_NAME
+def main(argv):
+    ''' Check if a config file exists and configure client '''
+    config_location = CONFIG_LOCATION
     if os.path.isfile(config_location):
         parse_config(config_location)       
     else:
         configure(config_location)
 
-    srvr = Server(SERVER_ADDRESS)
-    srvr.info()
-    srvr.texts()
-    srvr.files()
-    srvr.upload_text("hi")
-    srvr.upload_file("/home/hemite/.uploader")
-    parser = argparse.ArgumentParser(description="Control Uploader client")
-    """"
-    parser.add_argument('-x', '--x-center', type=float, required=True)
-    parser.add_argument('-y', '--y-center', type=float, required=True)
-    parser.add_argument('values', type=float, nargs='*')
-    args = parser.parse_args()
-    x(args.x_center, args.y_center, args.values)
-    """
-
+    ''' Parse arguments '''
+    if not argv:
+        srvr = Server(SERVER_ADDRESS)
+        srvr.files()
+        srvr.texts()
+    elif argv[0] == "-h":
+        usage()
+    elif argv[0] == "-r":
+        reset_configuration()
+    else:
+        srvr = Server(SERVER_ADDRESS)
+        if argv[0] == "-f":
+            client_files(argv,srvr)
+        elif argv[0] == "-i":
+            srvr.info()
+        elif argv[0] == "-t":
+            client_texts(argv,srvr)
+        else:
+            client_upload(argv[0],srvr)
+    ''' Done '''
+    sys.exit(0)
 
 if __name__ == '__main__':
-    #try:
-    main()
-    #except:
-    #    print(colors.FAIL + "Whoops!\nSomething went wrong" + colors.ENDC)  
+    main(sys.argv[1:])
