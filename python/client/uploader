@@ -34,6 +34,12 @@ def print_header(text):
 def print_warning(message):
     print(colors.WARNING + message + colors.ENDC)
 
+def print_ok_blue(message):
+    print(colors.OKBLUE + message + colors.ENDC)
+
+def print_ok_green(message):
+    print(colors.OKGREEN + message + colors.ENDC)
+
 def fetch_and_format_time(json_item):
         current_time = json_item["TimeCreated"] 
         pretty_time = datetime.datetime.fromtimestamp(
@@ -55,10 +61,6 @@ class Server:
             self.state = json.loads(requests.get(address).text)
         except requests.exceptions.RequestException as e:
             die("No connection to server")
-
-    @staticmethod
-    def preface_tiem():
-        pass
 
     def info(self):
         print_header("Info:")
@@ -95,7 +97,10 @@ class Server:
             die("File does not exist")
         f = {'file': open(file_path, "rb")}
         try:
-            requests.post(self.address,files=f)
+            response = requests.post(self.address,files=f)
+            for f in reversed(response.json()["Files"]):
+                if f["Name"] == os.path.basename(file_path):
+                    return(f["URL"])
         except requests.exceptions.RequestException as e:
             die("Couldn't upload file'")
 
@@ -139,7 +144,9 @@ def client_texts(arguments, srvr):
 
 def client_files(arguments, srvr):
     if(len(arguments) > 1):
-        srvr.upload_file(arguments[1])
+        url = srvr.upload_file(arguments[1])
+        print_ok_blue("File URL:")
+        print_ok_green(url)
     else:
         srvr.files()
 
