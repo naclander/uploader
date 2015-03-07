@@ -59,6 +59,7 @@ class Server:
         self.address = address
         try:
             self.state = json.loads(requests.get(address).text)
+            self.max_upload_size = self.state["Info"]["MaxUploadSize"]
         except requests.exceptions.RequestException as e:
             die("No connection to server")
 
@@ -95,6 +96,8 @@ class Server:
     def upload_file(self,file_path):
         if not os.path.isfile(file_path):
             die("File does not exist")
+        if self.max_upload_size < os.stat(file_path).st_size:
+            die("File too large to upload")
         f = {'file': open(file_path, "rb")}
         try:
             response = requests.post(self.address,files=f)
@@ -167,8 +170,6 @@ def main(argv):
         srvr = Server(SERVER_ADDRESS)
         srvr.files()
         srvr.texts()
-    elif argv[0] == "-h":
-        usage()
     elif argv[0] == "-r":
         reset_configuration()
     else:
@@ -180,7 +181,7 @@ def main(argv):
         elif argv[0] == "-t":
             client_texts(argv,srvr)
         else:
-            client_upload(argv[0],srvr)
+            usage()
     ''' Done '''
     sys.exit(0)
 
