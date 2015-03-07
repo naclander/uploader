@@ -109,7 +109,7 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 			if err == nil {
 				w.Write(obj)
 			} else {
-				http.Error(w, "Coudln't marshall json", 500)
+				http.Error(w, "Couldn't ' marshall json", 500)
 				os.Exit(1)
 			}
 		} else if FilesStorage[InputUrl] == nil {
@@ -131,9 +131,11 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 			defer file.Close()
 			NewRandomString := GenRandomString(header.Filename)
 			b := &bytes.Buffer{}
-			_, err = io.Copy(b, file)
-			if err != nil {
-				fmt.Fprintln(w, err)
+			maxUploadSize := int64(Contents.Info.MaxUploadSize)
+			written, err := io.CopyN(b, file, maxUploadSize)
+			if err != io.EOF && written != maxUploadSize{
+				http.Error(w, "Couldn't read file'", 500)
+				os.Exit(1)
 			}
 			FilesStorage[NewRandomString] = b
 			Contents.Files = append(Contents.Files, File{
@@ -192,6 +194,7 @@ func main() {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+	//TOOD  Limit the upload size explicitly 
 	InitContents(*SelfAddrPtr, *PortPtr, *MaxUploadSizePtr, *TTLPtr)
 	http.HandleFunc("/", MainResponse)
 	panic(s.ListenAndServe())
