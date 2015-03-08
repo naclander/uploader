@@ -1,11 +1,11 @@
 # Uploader
 
 ##About
+Its an easy way to share notes and files between different people.
+
 Uploader lets you quickly write sentences, or upload files for others to quickly
 look at or download. All sentences and files uploaded are temporary, and get
 automatically deleted after a specified amount of time.
-
-Its an easy way to share notes and files between different people.
 
 <!---
 TODO:
@@ -18,8 +18,7 @@ components should work independently from each other, and make no assumptions
 about the inner workings of the component they are interacting with, other
 than the established API.
 
-One should ideally be able to run any combination of client and server
-components.
+One should be be able to mix and match any client and server implementations.
 
 ##API
 
@@ -54,11 +53,11 @@ should send over the file corresponding to that URL.
 Some more server configuration information:
 
 * TTL - how long files and text strings will remain on the server
-* MAX Size - maximum file size allowed by the serverjjj
+* MAX Upload Size - maximum file size allowed by the server
 
 ##Example usage
 
-Below is an example usecase of an Uploader CLI client:
+Example usage of an Uploader CLI client:
 
 ```
 >> uploader
@@ -76,7 +75,7 @@ Texts:
 ```
 
 ###JSON Object Format
-Below is an example of a JSON object sent from the server to the client:
+Example of a JSON object sent from the server to the client:
 
 ```
 {
