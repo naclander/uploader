@@ -127,7 +127,7 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 			 * It is requested. */
 			written, err := io.Copy(w, bytes.NewReader(retrievedFile.Bytes()))
 			if written != fileSize || err != nil {
-				os.Exit(1)
+				die("Couldn't send back entire file")
 			}
 		}
 		return
