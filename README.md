@@ -21,7 +21,9 @@ than the established API.
 One should ideally be able to run any combination of client and server
 components.
 
-###Client API
+##API
+
+##Client
 The client should be able to upload files and text strings to the server.
 
 * files - POST using `type=file`
@@ -36,7 +38,7 @@ user. For example, a web client might use the JSON object to display HTML
 after every POST, where as a CLI client might not. This JSON object is also
 returned when a GET is made to the base server address.
 
-###Server API
+##Server
 The server should be able to accept files and text strings uploaded to it
 by the client, see the Client API section for more details.
 
@@ -53,6 +55,25 @@ Some more server configuration information:
 
 * TTL - how long files and text strings will remain on the server
 * MAX Size - maximum file size allowed by the serverjjj
+
+##Example usage
+
+Below is an example usecase of an Uploader CLI client:
+
+```
+>> uploader
+No files to show
+No texts to show
+>> uploader -t "This is a test string"
+>> uploader -f ~/.vimrc
+File URL:
+http://serverurl:8000/asf3da
+>> uploader
+Files:
+10:07:43 .vimrc http://serverurl:8000/asf3da
+Texts:
+10:07:32 This is a text string
+```
 
 ###JSON Object Format
 Below is an example of a JSON object sent from the server to the client:
