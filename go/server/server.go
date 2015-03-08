@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -45,6 +46,11 @@ var MaxUploadSize string
 
 var FilesStorage = make(map[string]*bytes.Buffer)
 
+func die(message string) {
+	log.Fatal(message)
+	os.Exit(1)
+}
+
 func isExpired(timeCreated int64) bool {
 	return (time.Now().Unix()-timeCreated >= Contents.Info.ObjectTTL)
 }
@@ -79,8 +85,7 @@ func InitContents(selfAddr, port string, MaxUploadSize int, TTL int64) {
 	}
 	_, err := json.Marshal(Contents)
 	if err != nil {
-		fmt.Println("Failed during initialization")
-		os.Exit(1)
+		die("Failed during initialization")
 	}
 }
 
@@ -109,8 +114,9 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 			if err == nil {
 				w.Write(obj)
 			} else {
-				http.Error(w, "Couldn't ' marshall json", 500)
-				os.Exit(1)
+				message := "Couldn't marshall json"
+				http.Error(w, message, 500)
+				die(message)
 			}
 		} else if FilesStorage[InputUrl] == nil {
 			http.NotFound(w, r)
@@ -133,9 +139,10 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 			b := &bytes.Buffer{}
 			maxUploadSize := int64(Contents.Info.MaxUploadSize)
 			written, err := io.CopyN(b, file, maxUploadSize)
-			if err != io.EOF && written != maxUploadSize{
-				http.Error(w, "Couldn't read file'", 500)
-				os.Exit(1)
+			if err != io.EOF && written != maxUploadSize {
+				message := "Couldn't read file"
+				http.Error(w, message, 500)
+				die(message)
 			}
 			FilesStorage[NewRandomString] = b
 			Contents.Files = append(Contents.Files, File{
@@ -168,8 +175,9 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 			if err == nil {
 				w.Write(obj)
 			} else {
-				http.Error(w, "Couldn't marshal json for text", 500)
-				os.Exit(1)
+				message := "Couldn't marshal json for text"
+				http.Error(w, message, 500)
+				die(message)
 			}
 		}
 	default:
@@ -194,7 +202,7 @@ func main() {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	//TOOD  Limit the upload size explicitly 
+	//TOOD  Limit the upload size explicitly
 	InitContents(*SelfAddrPtr, *PortPtr, *MaxUploadSizePtr, *TTLPtr)
 	http.HandleFunc("/", MainResponse)
 	panic(s.ListenAndServe())
