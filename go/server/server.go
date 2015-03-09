@@ -106,11 +106,11 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 	RemoveExpiredItems()
 	switch r.Method {
 	case "GET":
-		InputUrl := r.URL.String()[1:]
-		if InputUrl == "" {
+		requestURL := r.URL.String()[1:]
+		/* Client requested entire json object */
+		if requestURL == "" {
 			w.Header().Set("Content-Type", "application/json")
 			obj, err := json.Marshal(Contents)
-			//TODO Save file with actuall name instead of hash
 			if err == nil {
 				w.Write(obj)
 			} else {
@@ -118,19 +118,19 @@ func MainResponse(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, message, 500)
 				die(message)
 			}
-		} else if FilesStorage[InputUrl] == nil {
+			/* Client requested a file that no longer exists or never existed */
+		} else if FilesStorage[requestURL] == nil {
 			http.NotFound(w, r)
+			/* Client requested a file we have */
 		} else {
-			retrievedFile := (*FilesStorage[InputUrl])
-			fileSize := int64(retrievedFile.Len())
+			retrievedFile := (*FilesStorage[requestURL])
 			/* Need to create a Reader so we can send the file again next time
 			 * It is requested. */
 			written, err := io.Copy(w, bytes.NewReader(retrievedFile.Bytes()))
-			if written != fileSize || err != nil {
+			if written != int64(retrievedFile.Len()) || err != nil {
 				die("Couldn't send back entire file")
 			}
 		}
-		return
 	case "POST":
 		file, header, err := r.FormFile("file")
 		if err == nil {
@@ -194,7 +194,8 @@ func main() {
 	PortPtr := flag.String("port", DefaultPort, "Port to run server on")
 	SelfAddrPtr := flag.String("selfAddr", DefaultAddr, "URL Address to access server")
 	TTLPtr := flag.Int64("TTL", DefaultTTL, "Time files and texts stay on server")
-	MaxUploadSizePtr := flag.Int("MaxUploadSize", DefaultUploadSize, "Maximum size of file uploaded")
+	MaxUploadSizePtr := flag.Int("MaxUploadSize", DefaultUploadSize,
+		"Maximum size of file uploaded")
 	flag.Parse()
 	s := &http.Server{
 		Addr:           ":" + *PortPtr,
