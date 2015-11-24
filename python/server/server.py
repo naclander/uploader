@@ -9,14 +9,15 @@ import time
 
 app = flask.Flask(__name__)
 Files = {}
-Content = {"Files": [], 
-           "Texts": [], 
-           "Info": {"SelfAddress": "", "MaxUploadSize": "", "ObjectTTL": ""}
-          }
-
+Content = {"Files": [],
+           "Texts": [],
+           "Info": {"SelfAddress": "",
+                    "MaxUploadSize": "",
+                    "ObjectTTL": ""}}
 ''' **************************************** 
     Utility 
     **************************************** '''
+
 
 def setArguments(args):
     Content["Info"]["SelfAddress"] = args["SelfAddress"] + ":" + str(args["port"]) + "/"
@@ -24,16 +25,17 @@ def setArguments(args):
     app.config['MAX_CONTENT_LENGTH'] = args["MaxUploadSize"]
     Content["Info"]["ObjectTTL"] = args["ObjectTTL"]
 
+
 def getHash(string):
     toHash = (string + str(time.time())).encode('utf-8')
     md5hash = hashlib.md5(toHash).hexdigest()
-    return(md5hash[:6])
+    return (md5hash[:6])
 
 
 def saveString(string):
     Content["Texts"].append({"Content": string,
-                             "TimeCreated": int(time.time())
-                            })
+                             "TimeCreated": int(time.time())})
+
 
 def saveFile(uploaded_file):
     hashValue = getHash(uploaded_file.filename)
@@ -50,26 +52,30 @@ def saveFile(uploaded_file):
     Content["Files"].append({"Name": uploaded_file.filename,
                              "TimeCreated": time.time(),
                              "Hash": hashValue,
-                             "URL": (Content["Info"]["SelfAddress"] + hashValue)
-                       })
+                             "URL": (Content["Info"]["SelfAddress"] + hashValue
+                                     )})
+
 
 ''' **************************************** 
     Routes
     **************************************** '''
 
+
 @app.route('/', methods=['GET'])
 def index():
-    return(flask.jsonify(Content))
+    return (flask.jsonify(Content))
+
 
 @app.route('/<hashValue>')
 def download(hashValue):
     if hashValue in Files:
         file_data = Files[hashValue]
         return flask.send_file(file_data["Data"],
-                               attachment_filename=file_data["Filename"], 
+                               attachment_filename=file_data["Filename"],
                                mimetype=file_data["Mimetype"])
     else:
         flask.abort(404)
+
 
 @app.route('/', methods=['POST'])
 def upload():
@@ -79,22 +85,36 @@ def upload():
             saveString(text)
     elif flask.request.files['file']:
         saveFile(flask.request.files['file'])
-    return(flask.jsonify(Content))
+    return (flask.jsonify(Content))
+
 
 ''' **************************************** 
     Main
     **************************************** '''
 
+
 def main(argv):
     parser = argparse.ArgumentParser(description='A python Uploader server')
-    parser.add_argument('--port', '-p', action='store', default='8080', type=int)
-    parser.add_argument('--MaxUploadSize', '-us', action='store', default='2500000', type=int)
+    parser.add_argument('--port',
+                        '-p',
+                        action='store',
+                        default='8080',
+                        type=int)
+    parser.add_argument('--MaxUploadSize',
+                        '-us',
+                        action='store',
+                        default='2500000',
+                        type=int)
     parser.add_argument('--ObjectTTL', action='store', default='300', type=int)
-    parser.add_argument('--SelfAddress', action='store', default='http://localhost', type=str)
+    parser.add_argument('--SelfAddress',
+                        action='store',
+                        default='http://localhost',
+                        type=str)
     args = vars(parser.parse_args())
     setArguments(args)
 
     app.run(debug=True, port=args["port"])
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])
