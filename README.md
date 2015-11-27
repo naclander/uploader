@@ -1,6 +1,8 @@
 # Uploader
 
-##About
+![](https://imgs.xkcd.com/comics/file_transfer.png)
+
+## About
 Its an easy way to share notes and files between different people.
 
 Uploader lets you quickly write sentences, or upload files for others to quickly
@@ -12,7 +14,7 @@ TODO:
 Provide a link here to demo, once there is a stable version of the application.
 -->
 
-##General Idea
+## General Idea
 Uploader is split between a client component, and a server component. These
 components should work independently from each other, and make no assumptions
 about the inner workings of the component they are interacting with, other
@@ -20,9 +22,9 @@ than the established API.
 
 One should be be able to mix and match any client and server implementations.
 
-##API
+## API
 
-##Client
+## Client
 The client should be able to upload files and text strings to the server.
 
 * files - POST using `type=file`
@@ -37,7 +39,7 @@ user. For example, a web client might use the JSON object to display HTML
 after every POST, where as a CLI client might not. This JSON object is also
 returned when a GET is made to the base server address.
 
-##Server
+## Server
 The server should be able to accept files and text strings uploaded to it
 by the client, see the Client API section for more details.
 
@@ -55,7 +57,7 @@ Some more server configuration information:
 * TTL - how long files and text strings will remain on the server
 * MAX Upload Size - maximum file size allowed by the server
 
-##Example usage
+## Example usage
 
 Example usage of an Uploader CLI client:
 
@@ -74,7 +76,7 @@ Texts:
 10:07:32 This is a text string
 ```
 
-###JSON Object Format
+### JSON Object Format
 Example of a JSON object sent from the server to the client:
 
 ```
