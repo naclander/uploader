@@ -1,5 +1,13 @@
 #!/bin/python
 
+"""
+This is a python implementation the server component of uploader[0]. It requires
+flask[1], and should work with any other uploader client.
+
+[0] https://github.com/naclander/uploader
+[1] http://flask.pocoo.org/
+"""
+
 import argparse
 import flask
 import hashlib
@@ -14,10 +22,10 @@ Content = {"Files": [],
            "Info": {"SelfAddress": "",
                     "MaxUploadSize": "",
                     "ObjectTTL": ""}}
-''' **************************************** 
-    Utility 
-    **************************************** '''
 
+""" ****************************************
+    Utility
+    **************************************** """
 
 def setArguments(args):
     Content["Info"]["SelfAddress"] = args["SelfAddress"] + ":" + str(args["port"]) + "/"
@@ -25,20 +33,23 @@ def setArguments(args):
     app.config['MAX_CONTENT_LENGTH'] = args["MaxUploadSize"]
     Content["Info"]["ObjectTTL"] = args["ObjectTTL"]
 
-
 def getHash(string):
+    """
+    Generate a 6 character hash to identify uploaded files. Hash is generated
+    using file name and current time.
+    """
     toHash = (string + str(time.time())).encode('utf-8')
     md5hash = hashlib.md5(toHash).hexdigest()
     return (md5hash[:6])
-
 
 def saveString(string):
     Content["Texts"].append({"Content": string,
                              "TimeCreated": int(time.time())})
 
-
 def saveFile(uploaded_file):
     hashValue = getHash(uploaded_file.filename)
+    while hashValue in Files:
+        hashValue = getHash(uploaded_file.filename)
     # we have to store the components seperately, instead of leaving them in the
     # FileStorage object.
     # We do this because when we finish serving the request, the stream in the
@@ -55,16 +66,25 @@ def saveFile(uploaded_file):
                              "URL": (Content["Info"]["SelfAddress"] + hashValue
                                      )})
 
+def deleteIfExpired(itemList):
+    ObjectTTL = Content["Info"]["ObjectTTL"]
+    for item in itemList:
+        if item["TimeCreated"] + ObjectTTL < time.time():
+            itemList.remove(item)
 
-''' **************************************** 
+@app.before_request
+def deleteOldFiles():
+    # Look at all these side effects, lets make this more functional?
+    deleteIfExpired(Content["Texts"])
+    deleteIfExpired(Content["Files"])
+
+""" ****************************************
     Routes
-    **************************************** '''
-
+    **************************************** """
 
 @app.route('/', methods=['GET'])
 def index():
     return (flask.jsonify(Content))
-
 
 @app.route('/<hashValue>')
 def download(hashValue):
@@ -76,7 +96,6 @@ def download(hashValue):
     else:
         flask.abort(404)
 
-
 @app.route('/', methods=['POST'])
 def upload():
     if flask.request.form:
@@ -87,11 +106,9 @@ def upload():
         saveFile(flask.request.files['file'])
     return (flask.jsonify(Content))
 
-
-''' **************************************** 
+""" ****************************************
     Main
-    **************************************** '''
-
+    **************************************** """
 
 def main(argv):
     parser = argparse.ArgumentParser(description='A python Uploader server')
