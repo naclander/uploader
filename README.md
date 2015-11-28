@@ -24,7 +24,7 @@ One should be be able to mix and match any client and server implementations.
 
 ## API
 
-## Client
+### Client
 The client should be able to upload files and text strings to the server.
 
 * files - POST using `type=file`
@@ -39,7 +39,7 @@ user. For example, a web client might use the JSON object to display HTML
 after every POST, where as a CLI client might not. This JSON object is also
 returned when a GET is made to the base server address.
 
-## Server
+### Server
 The server should be able to accept files and text strings uploaded to it
 by the client, see the Client API section for more details.
 
