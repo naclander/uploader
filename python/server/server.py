@@ -12,6 +12,7 @@ import argparse
 import flask
 import hashlib
 import io
+import logging
 import sys
 import time
 
@@ -90,10 +91,12 @@ def index():
 def download(hashValue):
     if hashValue in Files:
         file_data = Files[hashValue]
+        logging.info("Known file request with hash %s accessed" % hashValue)
         return flask.send_file(file_data["Data"],
                                attachment_filename=file_data["Filename"],
                                mimetype=file_data["Mimetype"])
     else:
+        logging.info("Unknown file request with hash %s" % hashValue)
         flask.abort(404)
 
 @app.route('/', methods=['POST'])
@@ -102,8 +105,10 @@ def upload():
         text = flask.request.form['text']
         if text:
             saveString(text)
+            logging.info("Saved new string")
     elif flask.request.files['file']:
         saveFile(flask.request.files['file'])
+        logging.info("Saved new file")
     return (flask.jsonify(Content))
 
 """ ****************************************
@@ -111,6 +116,7 @@ def upload():
     **************************************** """
 
 def main(argv):
+    logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description='A python Uploader server')
     parser.add_argument('--port',
                         '-p',
@@ -130,7 +136,7 @@ def main(argv):
     args = vars(parser.parse_args())
     setArguments(args)
 
-    app.run(debug=True, port=args["port"])
+    app.run(debug=False, port=args["port"])
 
 
 if __name__ == '__main__':
