@@ -30,7 +30,7 @@ Content = {"Files": [],
 
 def setArguments(args):
     Content["Info"]["SelfAddress"] = args["SelfAddress"] + ":" + str(args["port"]) + "/"
-    Content["Info"]["MaxUpoadSize"] = args["MaxUploadSize"]
+    Content["Info"]["MaxUploadSize"] = args["MaxUploadSize"]
     app.config['MAX_CONTENT_LENGTH'] = args["MaxUploadSize"]
     Content["Info"]["ObjectTTL"] = args["ObjectTTL"]
 
